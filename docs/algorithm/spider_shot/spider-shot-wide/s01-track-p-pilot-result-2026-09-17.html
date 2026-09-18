@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>S01 Track P Pilot Result · Spider Shot Wide v1 滑鼠 × 握法</title>
+  <style>
+    :root {
+      --page: #eef1ef; --paper: #fff; --ink: #17211e; --muted: #5f6d68;
+      --line: #cfd7d3; --line-dark: #9aa8a2;
+      --teal: #087e8b; --teal-soft: #dceff1;
+      --coral: #d75a47; --coral-soft: #fae7e3;
+      --amber: #ad7417; --amber-soft: #fff0cb;
+      --green: #257552; --green-soft: #e1f1e9;
+      --violet: #7258a6; --violet-soft: #ece7f5;
+      --radius: 6px;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --sans: Inter, "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; min-width: 320px; color: var(--ink); background: var(--page); font-family: var(--sans); line-height: 1.62; }
+    a { color: var(--teal); text-underline-offset: 3px; }
+    code { font-family: var(--mono); font-size: 0.9em; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+
+    .masthead { position: relative; min-height: 300px; overflow: hidden; color: #fff; background: #171d1c; }
+    .masthead img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 78% 51%; opacity: 0.5; }
+    .masthead::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(14,19,18,0.98) 0%, rgba(14,19,18,0.9) 44%, rgba(14,19,18,0.2) 80%); }
+    .masthead-inner { position: relative; z-index: 1; display: grid; align-content: center; min-height: 300px; max-width: 780px; padding: 32px 0; }
+    .eyebrow { margin: 0 0 10px; color: #8fdce2; font: 750 0.76rem/1.2 var(--mono); text-transform: uppercase; }
+    h1 { margin: 0; max-width: 720px; font-size: clamp(1.85rem, 4.4vw, 3.1rem); line-height: 1.1; }
+    .lede { max-width: 680px; margin: 16px 0 0; color: #d9e1de; font-size: 1rem; }
+    .status-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .status { display: inline-flex; align-items: center; min-height: 28px; padding: 4px 9px; border: 1px solid rgba(255,255,255,0.24); border-radius: 4px; background: rgba(0,0,0,0.28); color: #edf5f2; font-size: 0.74rem; font-weight: 700; }
+    .status.warn { border-color: #d8ab54; color: #ffdda0; }
+
+    .layout { display: grid; grid-template-columns: 218px minmax(0, 1fr); gap: 30px; padding: 30px 0 60px; }
+    .toc { position: sticky; top: 18px; align-self: start; }
+    .toc-title { margin: 0 0 8px; color: var(--muted); font: 700 0.72rem/1.2 var(--mono); text-transform: uppercase; }
+    .toc a { display: block; padding: 7px 9px; border-left: 2px solid var(--line); color: var(--muted); text-decoration: none; font-size: 0.8rem; }
+    .toc a:hover, .toc a:focus-visible { border-left-color: var(--teal); color: var(--ink); background: #fff; }
+    main { min-width: 0; }
+    section { margin-bottom: 44px; scroll-margin-top: 20px; }
+    .section-no { display: block; margin-bottom: 4px; color: var(--coral); font: 750 0.76rem/1.2 var(--mono); }
+    h2 { margin: 0 0 14px; font-size: clamp(1.4rem, 3vw, 1.95rem); line-height: 1.2; }
+    h3 { margin: 0 0 8px; font-size: 1rem; line-height: 1.35; }
+    p { margin: 0 0 12px; }
+    .section-intro { max-width: 850px; color: var(--muted); }
+
+    .decision { display: grid; grid-template-columns: 1.05fr 0.95fr; border: 1px solid var(--line-dark); border-left: 5px solid var(--coral); border-radius: var(--radius); background: var(--paper); }
+    .decision > div { padding: 22px; }
+    .decision > div + div { border-left: 1px solid var(--line); background: #f7f9f8; }
+    .decision strong { display: block; margin-bottom: 6px; font-size: 1.06rem; }
+    .decision p { color: var(--muted); font-size: 0.88rem; }
+    .verdict { color: var(--coral); font-size: 1.3rem; }
+
+    .matrix { width: 100%; border-collapse: collapse; border: 1px solid var(--line); background: var(--paper); font-size: 0.78rem; }
+    .matrix th, .matrix td { padding: 9px 11px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .matrix th { background: #f0f3f1; font-size: 0.72rem; }
+    .matrix td.num { font-family: var(--mono); text-align: right; }
+    .matrix .yes { color: var(--green); font-weight: 750; }
+    .matrix .no { color: var(--coral); font-weight: 750; }
+    .matrix .partial { color: var(--amber); font-weight: 750; }
+    .matrix caption { text-align: left; color: var(--muted); font-size: 0.75rem; padding: 0 0 6px; }
+    .matrix-wrap { overflow-x: auto; }
+    .ca { color: var(--violet); font-weight: 750; }
+    .cb { color: var(--teal); font-weight: 750; }
+    .cc { color: var(--coral); font-weight: 750; }
+
+    .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+    .kpi { padding: 14px; border: 1px solid var(--line); border-top: 4px solid var(--violet); border-radius: 5px; background: var(--paper); }
+    .kpi:nth-child(2) { border-top-color: var(--teal); }
+    .kpi:nth-child(3) { border-top-color: var(--coral); }
+    .kpi span { display: block; color: var(--muted); font: 700 0.7rem/1.3 var(--mono); }
+    .kpi strong { display: block; margin-top: 8px; font-size: 1.5rem; line-height: 1.1; }
+    .kpi small { display: block; margin-top: 8px; color: var(--muted); font-size: 0.74rem; }
+
+    .charts { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 10px; }
+    .chart { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .chart h3 { margin: 0 0 2px; font-size: 0.9rem; }
+    .chart p { margin: 0 0 9px; color: var(--muted); font-size: 0.74rem; }
+    canvas { display: block; width: 100%; height: 250px; border-radius: 3px; background: #fbfcfb; border: 1px solid var(--line); }
+
+    .callout { padding: 15px 17px; border: 1px solid #d8b66f; border-radius: var(--radius); background: var(--amber-soft); color: #5d4519; font-size: 0.83rem; }
+    .callout strong { color: #49340f; }
+    .callout.stop { border-color: var(--coral); background: var(--coral-soft); color: #6c2b1e; }
+    .callout.stop strong { color: #55200f; }
+    .callout.ok { border-color: #7fb79a; background: var(--green-soft); color: #1e4f38; }
+    .callout.ok strong { color: #143627; }
+
+    .finding { border: 1px solid var(--line); border-left: 4px solid var(--amber); border-radius: var(--radius); background: var(--paper); padding: 17px; margin-bottom: 10px; }
+    .finding .no { color: var(--muted); font: 750 0.7rem/1.2 var(--mono); text-transform: uppercase; }
+    .finding h3 { margin: 7px 0 6px; }
+    .finding p { margin: 0 0 8px; color: var(--muted); font-size: 0.83rem; }
+    .finding p:last-child { margin-bottom: 0; }
+    .finding.blocking { border-left-color: var(--coral); }
+    .finding.info { border-left-color: var(--teal); }
+
+    .formula { padding: 13px 15px; border-left: 3px solid var(--teal); background: #f6f8f7; color: #31413c; font: 0.78rem/1.7 var(--mono); overflow-x: auto; }
+    .files { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .files ul { margin: 0; padding-left: 20px; }
+    .files li { margin: 7px 0; font-size: 0.8rem; }
+    footer { padding: 22px 0 38px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.75rem; }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; display: grid; grid-template-columns: repeat(2, 1fr); }
+      .toc-title { grid-column: 1 / -1; }
+      .decision, .charts, .kpis { grid-template-columns: 1fr; }
+      .decision > div + div { border-left: 0; border-top: 1px solid var(--line); }
+    }
+    @media print { body { background: #fff; } .toc { display: none; } .layout { display: block; } section, .finding, .chart { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <img src="../../../exec-plan/active/stage12/wp-57-spider-shot-wide-flick/captures/peripheral-R-fov75.png" alt="Spider Shot Wide v1 在 FOV 75 下的右側周邊目標實機畫面">
+    <div class="shell masthead-inner">
+      <p class="eyebrow">Track P · pilot result · 2026-09-17</p>
+      <h1>S01 滑鼠 × 握法<br>抽取管線試跑結果</h1>
+      <p class="lede">三個條件、9 個 run、417 次周邊呈現全部通過品質硬閘。管線可用，並在過程中抓到四個會改變結論的量測問題。條件之間的差異<b>幾乎全部落在同條件 run 之間的波動範圍內</b>，因此本頁不產生任何優勝條件。</p>
+      <div class="status-row">
+        <span class="status">S01 · 9 runs · 417 peripheral presentations</span>
+        <span class="status">品質硬閘 9/9 通過 · timeout 0</span>
+        <span class="status warn">固定順序 pilot · 描述性 · 無優勝判定</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell layout">
+    <nav class="toc" aria-label="文件目錄">
+      <p class="toc-title">結果結構</p>
+      <a href="#verdict">00 Track P 結論</a>
+      <a href="#eligibility">01 資料資格與排除</a>
+      <a href="#timeline">02 時序與混淆</a>
+      <a href="#profile">03 三條件 profile</a>
+      <a href="#time">04 時間分布</a>
+      <a href="#paired">05 配對前綴診斷</a>
+      <a href="#sensitivity">06 敏感度與分層</a>
+      <a href="#pipeline">07 管線試跑發現</a>
+      <a href="#next">08 下一步</a>
+      <a href="#artifacts">09 產物與重現</a>
+    </nav>
+
+    <main>
+      <section id="verdict">
+        <span class="section-no">00 / VERDICT</span>
+        <h2>先回答：這批資料能不能選出最佳組合</h2>
+        <div class="decision">
+          <div>
+            <strong class="verdict">不能。證據不足以確認最佳組合。</strong>
+            <p>這是 Track P 的預期出口，不是失敗。三個條件的首發命中率相差 <b>6.2 個百分點</b>，但同一條件三個 run 之間本身就擺動 <b>6.1–12.2 個百分點</b>；時間中位數相差 <b>34–51 ms</b>，而 C 條件自己的 run 之間就差 <b>103 ms</b>。差異沒有大到超過測量本身的擺動。</p>
+            <p>唯一超出同條件波動的是 A→B 的 <code>hits/min</code>（+2.67，A 的 run 間全距 0.0、B 為 1.0）。但它正好是相隔 68 分鐘的那一組對比，而且其中 <b>77%</b> 來自「回中心」那半個週期——不是周邊拉槍。</p>
+          </div>
+          <div>
+            <strong>管線狀態：可用，且已抓到問題</strong>
+            <p>9 個 run 全數通過硬閘、417 次呈現全部成功抽取、配對前綴 129/129 逐筆刺激驗證一致、0 筆 timeout、僅 6 筆行政右截。</p>
+            <p>過程中抓到 4 個會改變結論的量測問題（<a href="#pipeline">§07</a>），其中 2 個若不處理會<b>放大</b>條件差異。機制層 7 個指標尚不可算，須等 TS canonical 抽取層。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="eligibility">
+        <span class="section-no">01 / ELIGIBILITY</span>
+        <h2>資料資格與排除流程</h2>
+        <p class="section-intro">條件標籤來自 manifest（GPW1 的握法由研究負責人確認為 1-2-2），不由資料夾推測。所有邊界都可追溯到 protocol 常數，不由資料本身決定。</p>
+
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <caption>排除流程計數表。每一步的 n 都在此可見；沒有任何一步是靜默刪除。</caption>
+            <thead><tr><th>步驟</th><th>A · GPW1/1-2-2</th><th>B · DK/1-2-2</th><th>C · DK/1-3-1</th></tr></thead>
+            <tbody>
+              <tr><td>匯入 run</td><td class="num">3</td><td class="num">3</td><td class="num">3</td></tr>
+              <tr><td>通過硬閘（validity／suspect／drill／detector）</td><td class="num yes">3</td><td class="num yes">3</td><td class="num yes">3</td></tr>
+              <tr><td>修剪後 active duration</td><td class="num">60.0 s ×3</td><td class="num">60.0 s ×3</td><td class="num">60.0 s ×3</td></tr>
+              <tr><td>周邊呈現總數</td><td class="num">136</td><td class="num">145</td><td class="num">136</td></tr>
+              <tr><td>其中 timeout</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
+              <tr><td>其中行政右截（session end）</td><td class="num">1</td><td class="num">2</td><td class="num">3</td></tr>
+              <tr><td>其中完全未開火</td><td class="num">0</td><td class="num">2</td><td class="num">3</td></tr>
+              <tr><td>rate／accuracy 可用 n</td><td class="num yes">136</td><td class="num yes">145</td><td class="num yes">136</td></tr>
+              <tr><td>進入 43 前綴配對</td><td class="num">129</td><td class="num">129</td><td class="num">129</td></tr>
+              <tr><td>機制層可用 n</td><td class="num no">0</td><td class="num no">0</td><td class="num no">0</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="callout ok"><strong>硬閘：9/9 通過，0 筆排除。</strong>validity 五旗全綠、<code>suspect</code> 全 false、<code>lateEventCount</code> 全 0、aim 更新率 80.9–85.3%（遠高於 KI-031 的靜默失效區）。seed 57001、sensitivity 1.3、DPI 800、FOV 75、1920×1080 在 9 個 run 完全一致。</div>
+
+        <div style="height:12px"></div>
+        <h3>Active window 契約（每個邊界都有來源）</h3>
+        <div class="formula">
+          active_start = 第一個 visible 事件（9 個 run 皆為 tick0 + 3000.0 ms）<br>
+          active_end&nbsp;&nbsp; = active_start + 60000 ms（protocol <code>endCondition.timeLimit</code>）<br>
+          active_duration = 60000.0 ms · 全 9 run 逐位相同<br>
+          <br>
+          TRIM_COUNTDOWN &nbsp;9/9 run，各 3000.0 ms<br>
+          TRIM_POST_TASK &nbsp;1/9 run（A rep1），5062.5 ms 錄製尾巴<br>
+          hits/min = 唯一周邊命中數 ÷ (active_duration / 60000)，每次呈現最多計一次命中
+        </div>
+        <div style="height:10px"></div>
+        <div class="callout stop"><strong>這個修剪是承重的。</strong>A rep1 的錄製長度是 68062.5 ms，其餘 8 個 run 皆為 63000.0 ms。若用原始錄製長度當分母，該 run 的 hits/min 會從 45.00 掉到 39.67（−11.8%），A 條件平均從 45.00 掉到 43.22，<b>B−A 的差距會從 +2.67 被灌水到 +4.44 hits/min（放大 66%）</b>——方向恰好有利於 DK。這是一個純粹的錄製假象。</div>
+      </section>
+
+      <section id="timeline">
+        <span class="section-no">02 / ORDER</span>
+        <h2>時序與無法補救的混淆</h2>
+        <p class="section-intro">條件順序 A → B → C 完全固定，沒有 counterbalance。以下每一個差值都必須與這張圖一起讀。</p>
+
+        <div class="charts">
+          <div class="chart">
+            <h3>9 個 run 依實際時間排列</h3>
+            <p>縱軸為 hits/min（實線）與首發命中率（虛線，右軸 0.75–0.95）。A 與 B 內部平坦，C 內部單向上升。</p>
+            <canvas id="timelineChart" aria-label="九個 run 的時間序列表現圖"></canvas>
+          </div>
+          <div class="chart">
+            <h3>週期成本拆解（平均值）</h3>
+            <p>一個完整週期 = 回中心 + 周邊拉槍。rate 的分母含兩者，周邊指標只涵蓋右半。</p>
+            <canvas id="cycleChart" aria-label="回中心與周邊拉槍的週期成本堆疊圖"></canvas>
+          </div>
+        </div>
+
+        <div style="height:14px"></div>
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <caption>逐 run 明細。同條件 run 之間的全距就是本頁的雜訊尺度。</caption>
+            <thead><tr><th>時間 (UTC)</th><th>條件</th><th>rep</th><th>周邊呈現</th><th>hits/min</th><th>首發率</th><th>KM 中位數 ms</th><th>KM p90 ms</th><th>右鍵按下</th></tr></thead>
+            <tbody>
+              <tr><td>06:56:38</td><td class="ca">A</td><td class="num">1</td><td class="num">45</td><td class="num">45.0</td><td class="num">0.911</td><td class="num">625.0</td><td class="num">805.7</td><td class="num">0</td></tr>
+              <tr><td>06:58:20</td><td class="ca">A</td><td class="num">2</td><td class="num">45</td><td class="num">45.0</td><td class="num">0.844</td><td class="num">591.7</td><td class="num">1156.6</td><td class="num">0</td></tr>
+              <tr><td>06:59:58</td><td class="ca">A</td><td class="num">3</td><td class="num">46</td><td class="num">45.0</td><td class="num">0.848</td><td class="num">608.5</td><td class="num">870.6</td><td class="num">0</td></tr>
+              <tr><td>08:07:34</td><td class="cb">B</td><td class="num">1</td><td class="num">49</td><td class="num">48.0</td><td class="num">0.878</td><td class="num">632.9</td><td class="num">871.4</td><td class="num">1</td></tr>
+              <tr><td>08:09:14</td><td class="cb">B</td><td class="num">2</td><td class="num">49</td><td class="num">48.0</td><td class="num">0.939</td><td class="num">598.4</td><td class="num">745.0</td><td class="num">0</td></tr>
+              <tr><td>08:10:48</td><td class="cb">B</td><td class="num">3</td><td class="num">47</td><td class="num">47.0</td><td class="num">0.936</td><td class="num">649.6</td><td class="num">796.5</td><td class="num">0</td></tr>
+              <tr><td>08:27:18</td><td class="cc">C</td><td class="num">1</td><td class="num">43</td><td class="num">42.0</td><td class="num">0.791</td><td class="num">715.9</td><td class="num">975.6</td><td class="num">34</td></tr>
+              <tr><td>08:29:22</td><td class="cc">C</td><td class="num">2</td><td class="num">46</td><td class="num">45.0</td><td class="num">0.913</td><td class="num">637.9</td><td class="num">769.8</td><td class="num">28</td></tr>
+              <tr><td>08:30:58</td><td class="cc">C</td><td class="num">3</td><td class="num">47</td><td class="num">46.0</td><td class="num">0.851</td><td class="num">613.1</td><td class="num">941.4</td><td class="num">17</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="callout stop"><strong>漂移外推診斷：不可估。</strong>三個條件的 run 斜率方向不一致 —— <code>hits/min</code> 每 rep 為 A <b>0.000</b>、B <b>−0.500</b>、C <b>+2.000</b>；KM 中位數為 A <b>−8.3</b>、B <b>+8.4</b>、C <b>−51.4</b> ms。方向相反表示這三個斜率不是同一個時間效應，因此不能用它外推 17／68 分鐘的空窗。按最終 workflow 的規則，本批<b>不做任何以漂移校正後的比較</b>。</div>
+        <div style="height:10px"></div>
+        <div class="callout"><strong>C 條件內部的單向改善值得單獨記下：</strong>hits/min 42→45→46、KM 中位數 716→638→613 ms、右鍵按下 34→28→17。三條線同向，且都指向「這個條件在被量測的當下仍在適應」。這不能證明握法會變好，只說明 C 的三個 run 不是同一個穩定狀態的三次抽樣——它同時也讓 C 的任何彙總值失去代表性。</div>
+      </section>
+
+      <section id="profile">
+        <span class="section-no">03 / PROFILE</span>
+        <h2>三條件原尺度 profile</h2>
+        <p class="section-intro">以下全部是三個 run 合併的原尺度值，括號內為三個 run 的範圍。沒有排名、沒有標示「較佳」。</p>
+
+        <div class="kpis">
+          <div class="kpi"><span>A · GPW1 / 1-2-2</span><strong>86.8%</strong><small>首發命中率（0.844–0.911）<br>45.00 hits/min（45–45）<br>KM 中位數 610.4 ms</small></div>
+          <div class="kpi"><span>B · DK / 1-2-2</span><strong>91.7%</strong><small>首發命中率（0.878–0.939）<br>47.67 hits/min（47–48）<br>KM 中位數 617.9 ms</small></div>
+          <div class="kpi"><span>C · DK / 1-3-1</span><strong>85.3%</strong><small>首發命中率（0.791–0.939）<br>44.33 hits/min（42–46）<br>KM 中位數 642.0 ms</small></div>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <caption>括號內為三個 run 的全距（= 本頁的雜訊尺度）。RMST 的 τ = 1700.6 ms，取三條件共同可觀測上限。</caption>
+            <thead><tr><th>指標</th><th>A · GPW1/122</th><th>B · DK/122</th><th>C · DK/131</th><th>說明</th></tr></thead>
+            <tbody>
+              <tr><td>周邊呈現 / 唯一命中</td><td class="num">136 / 135</td><td class="num">145 / 143</td><td class="num">136 / 133</td><td>呈現數本身是表現的函數</td></tr>
+              <tr><td><b>hits/min</b></td><td class="num">45.00 <span style="color:var(--muted)">(0.0)</span></td><td class="num">47.67 <span style="color:var(--muted)">(1.0)</span></td><td class="num">44.33 <span style="color:var(--muted)">(4.0)</span></td><td>分母含回中心與任務內等待</td></tr>
+              <tr><td><b>首發命中率</b></td><td class="num">86.8% <span style="color:var(--muted)">(6.7 pp)</span></td><td class="num">91.7% <span style="color:var(--muted)">(6.1 pp)</span></td><td class="num">85.3% <span style="color:var(--muted)">(12.2 pp)</span></td><td>未開火與 timeout 留在分母</td></tr>
+              <tr><td>timeout risk</td><td class="num">0 / 136</td><td class="num">0 / 145</td><td class="num">0 / 136</td><td>2500 ms 期限完全未觸發</td></tr>
+              <tr><td>KM 中位 time-to-hit</td><td class="num">610.4 ms <span style="color:var(--muted)">(33.3)</span></td><td class="num">617.9 ms <span style="color:var(--muted)">(51.2)</span></td><td class="num">642.0 ms <span style="color:var(--muted)">(102.8)</span></td><td>右截以 Kaplan–Meier 處理</td></tr>
+              <tr><td>KM p90</td><td class="num">870.6 ms</td><td class="num">796.3 ms</td><td class="num">941.4 ms</td><td>三條件皆可估（累積命中 &gt; 90%）</td></tr>
+              <tr><td>RMST(τ=1700.6)</td><td class="num">678.3 ms</td><td class="num">654.8 ms</td><td class="num">706.6 ms</td><td>截至 τ 的受限平均時間代價</td></tr>
+              <tr><td>首發角誤差中位數</td><td class="num">0.597°</td><td class="num">0.511°</td><td class="num">0.513°</td><td>直接讀 fire 事件 <code>offsetDeg</code></td></tr>
+              <tr><td>右鍵按下總次數</td><td class="num">0</td><td class="num">1</td><td class="num no">79</td><td>本 weapon 無 ADS，右鍵不改瞄準幾何</td></tr>
+              <tr><td>與右鍵按住重疊的 trial</td><td class="num">0</td><td class="num">1</td><td class="num no">59 / 136</td><td>43.4%，見 <a href="#sensitivity">§06</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="callout"><strong>hits/min 與 time-to-hit 在 A/B 之間方向相反。</strong>B 的產出較高（47.67 vs 45.00），但 B 的周邊命中時間中位數<b>略慢</b>（617.9 vs 610.4 ms）。拆解週期後原因清楚：A→B 的週期縮短 74.1 ms，其中回中心貢獻 <b>−57.0 ms（77%）</b>、周邊拉槍只貢獻 −17.1 ms。<b>整個周邊指標組看不到這個差異的大部分</b>。</div>
+      </section>
+
+      <section id="time">
+        <span class="section-no">04 / TIME</span>
+        <h2>時間分布（含右截）</h2>
+        <p class="section-intro">417 次呈現中有 411 次觀測到命中、6 次為行政右截、0 次 timeout。曲線用 Kaplan–Meier 估計，未命中不被丟棄也不被當成命中。</p>
+        <div class="charts">
+          <div class="chart">
+            <h3>Time-to-hit 存活曲線</h3>
+            <p>S(t) = 到時間 t 仍未命中的比例。三條曲線在 400–900 ms 之間幾乎重疊。</p>
+            <canvas id="kmChart" aria-label="三條件的 time-to-hit Kaplan-Meier 存活曲線"></canvas>
+          </div>
+          <div class="chart">
+            <h3>配對時間差分布</h3>
+            <p>43 前綴 × 3 reps 的逐筆差值（ms）。0 線兩側的分散遠大於中位數位移。</p>
+            <canvas id="deltaChart" aria-label="三組對比的配對時間差分布"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section id="paired">
+        <span class="section-no">05 / PAIRED</span>
+        <h2>43 前綴配對診斷</h2>
+        <p class="section-intro">同 seed 讓刺激序列相同，但這裡<b>逐筆驗證</b>過座標與側別才配對：129/129 全數通過，0 筆 <code>UNMATCHED_STIMULUS</code>。這是刺激匹配的子問題，不是完整任務的估計。</p>
+
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <caption>括號內為探索性配對 bootstrap 95% 區間（重抽 presentation index，4000 次）。它只反映固定 run／序列下的條件式不確定性，<b>不涵蓋 run 漂移、序列相依或跨日變異</b>。</caption>
+            <thead><tr><th>對比</th><th>配對數</th><th>Δ 首發率</th><th>Δ 中位時間</th><th>與雜訊尺度比較</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><b>A → B</b><br><span style="color:var(--muted)">換滑鼠，握法固定 1-2-2</span></td>
+                <td class="num">129</td>
+                <td class="num">+6.2 pp<br><span style="color:var(--muted)">[0.0, +13.2]</span></td>
+                <td class="num">+6.0 ms<br><span style="color:var(--muted)">[−15.0, +30.8]</span></td>
+                <td class="partial">首發 Δ 與 A（6.7 pp）／B（6.1 pp）的 run 全距相當；時間 Δ 幾近 0</td>
+              </tr>
+              <tr>
+                <td><b>B → C</b><br><span style="color:var(--muted)">換握法，滑鼠固定 DK</span></td>
+                <td class="num">129</td>
+                <td class="num">−6.2 pp<br><span style="color:var(--muted)">[−13.2, 0.0]</span></td>
+                <td class="num">+34.1 ms<br><span style="color:var(--muted)">[+11.4, +50.3]</span></td>
+                <td class="partial">首發 Δ 小於 C 的 run 全距（12.2 pp）；時間 Δ 小於 C（102.8 ms）與 B（51.2 ms）</td>
+              </tr>
+              <tr>
+                <td><b>A → C</b><br><span style="color:var(--muted)">完整組合對比</span></td>
+                <td class="num">129</td>
+                <td class="num">+0.0 pp<br><span style="color:var(--muted)">[−8.5, +8.5]</span></td>
+                <td class="num">+50.8 ms<br><span style="color:var(--muted)">[+24.0, +72.0]</span></td>
+                <td class="partial">首發完全打平（16 勝 16 負 97 平）；時間 Δ 小於 C 的 run 全距</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="callout stop"><strong>不可當獨立佐證：</strong><code>Δ(A→C) ≡ Δ(A→B) + Δ(B→C)</code> 是代數恆等式。上表三列不是三個互相印證的結果，而是兩個獨立差值加上它們的和。</div>
+        <div style="height:10px"></div>
+        <div class="callout"><strong>首發配對的逐筆結構比彙總更有訊息：</strong>A→B 為 16 勝／8 負／105 平，B→C 為 6 勝／14 負／109 平，A→C 為 16 勝／16 負／97 平。三組都有超過 75% 的配對<b>兩個條件結果相同</b>——差異來自少數幾筆，而不是整體水準的位移。</div>
+      </section>
+
+      <section id="sensitivity">
+        <span class="section-no">06 / SENSITIVITY</span>
+        <h2>敏感度與分層</h2>
+
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <caption>每一個敏感度分析都是「換一個合理的處置，結論會不會翻」。全部都不翻，但第三項改變了對 C 的描述方式。</caption>
+            <thead><tr><th>敏感度</th><th>A</th><th>B</th><th>C</th><th>結論是否改變</th></tr></thead>
+            <tbody>
+              <tr><td>首發率（全母體，主分析）</td><td class="num">86.76%</td><td class="num">91.72%</td><td class="num">85.29%</td><td>—</td></tr>
+              <tr><td>只保留有完整 2500 ms 追蹤期的呈現</td><td class="num">87.02%<br><span style="color:var(--muted)">n=131</span></td><td class="num">92.81%<br><span style="color:var(--muted)">n=139</span></td><td class="num">86.92%<br><span style="color:var(--muted)">n=130</span></td><td class="yes">否，三條件同向微升</td></tr>
+              <tr><td>加 ≥150 ms 殘留擊發護欄</td><td class="num">86.76%</td><td class="num">92.36%<br><span style="color:var(--muted)">n=144</span></td><td class="num">85.29%</td><td class="yes">否，僅 B +0.6 pp</td></tr>
+              <tr><td><b>C 依右鍵重疊分層</b></td><td class="num">—</td><td class="num">—</td><td class="num">未重疊 89.6% / 615 ms<br>重疊 79.7% / 693 ms</td><td class="partial">改變描述：C 的缺口集中在重疊 trial</td></tr>
+              <tr><td>疑似 repositioning 排除</td><td class="num no">不可算</td><td class="num no">不可算</td><td class="num no">不可算</td><td>需 TS canonical，見 <a href="#pipeline">§07</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="callout"><strong>C 的右鍵分層（描述性，非因果）：</strong>C 的 136 次呈現中有 <b>59 次（43.4%）</b>與右鍵按住重疊。未重疊子集的首發率 <b>89.6%</b>、中位時間 <b>615 ms</b>，與 A（86.8% / 610 ms）、B（91.7% / 618 ms）幾乎相同；重疊子集為 <b>79.7% / 693 ms</b>。這只說明「C 的整體缺口與右鍵重疊的 trial 共同出現」，<b>不能解讀為右鍵動作造成了多少退步</b>——按右鍵、握法不熟與當下的動作狀態彼此糾纏，且這半數 trial 就是握法效應本身，不能排除掉再宣稱 C 沒問題。</div>
+
+        <div style="height:12px"></div>
+        <h3>左右側分層（描述性）</h3>
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <thead><tr><th>條件</th><th>左側 n / 首發率 / 中位時間</th><th>右側 n / 首發率 / 中位時間</th><th>L−R 首發差</th></tr></thead>
+            <tbody>
+              <tr><td class="ca">A · GPW1/122</td><td class="num">70 / 92.9% / 609.3 ms</td><td class="num">66 / 80.3% / 617.7 ms</td><td class="num no">+12.6 pp</td></tr>
+              <tr><td class="cb">B · DK/122</td><td class="num">74 / 93.2% / 608.4 ms</td><td class="num">71 / 90.1% / 634.3 ms</td><td class="num">+3.1 pp</td></tr>
+              <tr><td class="cc">C · DK/131</td><td class="num">69 / 84.1% / 641.3 ms</td><td class="num">67 / 86.6% / 645.2 ms</td><td class="num">−2.5 pp</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="height:10px"></div>
+        <div class="callout">A 的右側首發率比左側低 12.6 pp，B 為 3.1 pp、C 為 −2.5 pp。單一受試者、單一順序下，這個不對稱可能來自裝置、來自該時段的狀態，或只是 66–70 個 trial 的抽樣波動——三者無法分辨。列在這裡是因為它是下一輪值得預先登錄的假設，<b>不是本批的發現</b>。</div>
+      </section>
+
+      <section id="pipeline">
+        <span class="section-no">07 / PIPELINE</span>
+        <h2>管線試跑抓到什麼</h2>
+        <p class="section-intro">這才是本次試跑的主要產出。下列四個問題若不處理，都會改變條件之間的比較結果；後兩項是能力缺口。</p>
+
+        <article class="finding blocking">
+          <span class="no">Finding 01 · 會放大差異</span>
+          <h3>錄製尾巴若不修剪，滑鼠差距被灌水 66%</h3>
+          <p>A rep1 的錄製長度 68062.5 ms，其餘 8 個 run 皆 63000.0 ms；多出的 5062.5 ms 全為零位移，起點正好在其他 run 的結束 tick。以原始錄製長度當 rate 分母，B−A 會從 <b>+2.67</b> 變成 <b>+4.44 hits/min</b>。</p>
+          <p><b>處置：</b>已採用 protocol 邊界（<code>first visible + 60000 ms</code>），並記 <code>TRIM_POST_TASK</code>。抽取層不得以「最後一槍／最後一個 visible／最後一個非零 tick」當 active_end。</p>
+        </article>
+
+        <article class="finding blocking">
+          <span class="no">Finding 02 · 會製造假失手</span>
+          <h3>首發可能是上一次交戰的殘留擊發</h3>
+          <p>B rep3 第 9 次呈現：目標出現後 <b>80 ms</b> 就有一發，角誤差 <b>48.36°</b>，判為 miss。80 ms 低於任何合理的視覺反應時間，該發實際上是對準上一個中心目標的殘留扣扳機，卻被系統歸屬到新目標，讓 B 平白吃掉一次首發失手。</p>
+          <p><b>處置：</b>需要一條事前登錄的最小延遲護欄。本批以 ≥150 ms 試算，只影響 B（91.72% → 92.36%），不改變任何結論；但在 n 更小或殘留更多的 cohort 上它會。<b>門檻必須在看資料前鎖定。</b></p>
+        </article>
+
+        <article class="finding">
+          <span class="no">Finding 03 · 指標涵蓋缺口</span>
+          <h3>rate 的差異大半落在周邊指標看不到的地方</h3>
+          <p>A→B 的週期縮短 74.1 ms 中，回中心佔 <b>−57.0 ms（77%）</b>、周邊拉槍只佔 −17.1 ms。目前整組指標（首發率、time-to-hit、機制層）全部只描述周邊那一半，因此無法解釋自己最大的那個差異。</p>
+          <p><b>建議：</b>把「回中心時間」（中心 visible → 下一個 visible）加進資料契約，作為與周邊指標並列的獨立欄位。它是直接讀數，不需要新的構念定義。</p>
+        </article>
+
+        <article class="finding">
+          <span class="no">Finding 04 · 指標失效（非故障）</span>
+          <h3>timeout risk 在本任務上沒有資訊</h3>
+          <p>417 次呈現、0 次 timeout。2500 ms 的 peek 期限從未逼近（最長觀測 1700.6 ms）。它在決策規則中被列為四個主要指標之一（δF 閘），但在這個難度下恆為 0，無法區分任何條件。</p>
+          <p><b>建議：</b>正式研究凍結門檻前重新評估 δF 是否有意義，或改用尾端時間指標承擔同一角色。好消息是：沒有 timeout 也意味著<b>沒有天花板效應</b>，p90 三條件皆可估。</p>
+        </article>
+
+        <article class="finding info">
+          <span class="no">Finding 05 · 能力缺口</span>
+          <h3>機制層 7 個指標全部不可算</h3>
+          <p>reaction、movement time、peak／entry ω、煞停保留率、擊發邊際、overshoot／drop、疑似 repositioning —— 全部依賴 canonical 的 onset／entry／角速度推導，那些定義住在 <code>src/metrics/*.ts</code>。在 Python 端重寫等於建立第二套定義（C-D4），因此本次<b>標為不可算而非近似</b>。</p>
+          <p>唯一可得的機制相鄰讀數是 fire 事件自帶的 <code>offsetDeg</code>（首發角誤差），已列入 <a href="#profile">§03</a>。要補齊機制層，需要一個重用既有 canonical derivation 的 TS 抽取層。</p>
+        </article>
+
+        <article class="finding info">
+          <span class="no">Finding 06 · 設計缺口</span>
+          <h3>雜訊尺度只有 3 個 run 可估，且 C 內部並非穩定狀態</h3>
+          <p>本頁用同條件 3 個 run 的全距當雜訊尺度，這是<b>探索性 run 波動，不是 MDC</b>——重測誤差需要獨立的跨日重測資料。更麻煩的是 C 的三個 run 單向改善（hits/min 42→45→46、右鍵 34→28→17），它們不是同一狀態的三次抽樣，因此 C 的全距同時混進了適應趨勢。</p>
+          <p><b>影響：</b>C 的任何彙總值代表性存疑，而它又同時是雜訊尺度最大的條件。這正是最終 workflow 要求獨立熟悉日與跨日重測的原因。</p>
+        </article>
+      </section>
+
+      <section id="next">
+        <span class="section-no">08 / NEXT</span>
+        <h2>下一步</h2>
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <thead><tr><th>#</th><th>動作</th><th>為什麼是現在</th></tr></thead>
+            <tbody>
+              <tr><td class="num">1</td><td>在收下一位受試者之前凍結 protocol：條件順序隨機化、獨立熟悉日、最小延遲護欄門檻、δ 門檻與主要指標</td><td>S01 的固定順序若複製到全體，混淆會從 pilot 瑕疵升級為整個研究的系統性缺陷</td></tr>
+              <tr><td class="num">2</td><td>建 TS 抽取層，重用 canonical derivation 補齊機制層 7 指標</td><td>目前只能描述「差多少」，不能描述「差在哪一段」；Finding 05</td></tr>
+              <tr><td class="num">3</td><td>把「回中心時間」加入資料契約</td><td>本批最大的那個差異有 77% 落在它身上；Finding 03</td></tr>
+              <tr><td class="num">4</td><td>確認 C 條件的右鍵觸發是刻意或非預期（訪談／觀察紀錄）</td><td>目前只能稱「右鍵觸發」，不能稱「誤觸」；它同時是 C 近半數 trial 的共變</td></tr>
+              <tr><td class="num">5</td><td>重新評估 timeout 門檻 δF 是否適用於本難度</td><td>0/417 觸發，該閘在決策規則中無法區分任何條件；Finding 04</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="artifacts">
+        <span class="section-no">09 / ARTIFACTS</span>
+        <h2>產物與重現</h2>
+        <div class="files">
+          <ul>
+            <li><b>純函式抽取</b>：<code>research/src/mousegrip/algorithms/pilot.py</code>（無 I/O、無時鐘、無隨機）</li>
+            <li><b>I/O runner</b>：<code>research/src/mousegrip/notebooks/run_pilot_s01.py</code>　→　<code>uv run python src/mousegrip/notebooks/run_pilot_s01.py</code></li>
+            <li><b>輸出</b>（<code>research/out/mousegrip-s01/</code>，git-ignored）：<code>quality_ledger.csv</code>（9 列）、<code>trial_metrics.csv</code>（417 列）、<code>run_metrics.csv</code>（9 列）、<code>matched_pairs.csv</code>（387 列）</li>
+            <li><b>來源資料</b>：<code>data/BQC-test/DKMouse/S01/</code> 的 9 份 <code>spider-shot-wide-v1</code> 匯出</li>
+            <li><b>流程依據</b>：<a href="mouse-grip-final-workflow-2026-09-17.html">最終整合 workflow v2.0</a>（Track P 分支）、<a href="mouse-grip-comparison-workflow-2026-09-17.html">比較 workflow</a>、<a href="mouse-grip-best-combination-analysis-workflow-2026-09-17.html">最佳組合 workflow</a></li>
+          </ul>
+        </div>
+        <div style="height:12px"></div>
+        <div class="callout"><strong>本頁沒有做的事：</strong>沒有產生優勝條件、沒有常模或技能等級、沒有確認性 CI、沒有機制層指標、沒有 polling／sensor 推論（匯出無 <code>mouseSamples</code>；已確認實驗全程設定一致，故此為不可量測維度而非混淆）、沒有把右鍵觸發稱為誤觸。S01 永久保留其固定順序 pilot 身分。</div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <div class="shell">Spider Shot Wide v1 · S01 Track P pilot result · 2026-09-17 · 描述性結果，不得作為選鼠依據或常模引用。</div>
+  </footer>
+
+  <script id="series" type="application/json">{"km":{"A":[[434.4,0.9926],[438.8,0.9853],[450.6,0.9779],[456.4,0.9706],[460.6,0.9632],[464.8,0.9559],[467.1,0.9485],[476.4,0.9412],[480.1,0.9338],[480.7,0.9265],[483.3,0.9191],[485.7,0.9118],[492.0,0.9044],[495.1,0.8971],[497.7,0.8897],[497.8,0.8824],[498.3,0.875],[502.2,0.8676],[504.5,0.8603],[506.8,0.8529],[506.8,0.8456],[508.0,0.8382],[508.4,0.8309],[510.0,0.8235],[511.0,0.8162],[516.5,0.8088],[520.3,0.8015],[520.4,0.7941],[522.0,0.7868],[522.4,0.7794],[522.7,0.7721],[523.8,0.7647],[526.4,0.7574],[526.5,0.75],[527.3,0.7426],[528.2,0.7353],[529.3,0.7279],[531.3,0.7206],[541.7,0.7132],[546.2,0.7059],[547.6,0.6985],[548.8,0.6912],[550.3,0.6838],[554.7,0.6765],[556.3,0.6691],[559.7,0.6618],[560.3,0.6544],[565.1,0.6471],[569.3,0.6397],[570.6,0.6324],[572.7,0.625],[572.7,0.6176],[577.5,0.6103],[579.1,0.6029],[580.5,0.5956],[584.8,0.5882],[587.3,0.5809],[589.4,0.5735],[590.0,0.5662],[591.7,0.5588],[592.3,0.5515],[597.5,0.5441],[599.3,0.5368],[601.4,0.5294],[607.7,0.5221],[608.5,0.5147],[609.3,0.5074],[610.5,0.5],[615.2,0.4926],[615.9,0.4853],[619.4,0.4779],[625.0,0.4706],[627.0,0.4632],[629.0,0.4559],[631.1,0.4485],[635.5,0.4412],[637.1,0.4338],[640.0,0.4265],[642.0,0.4191],[647.6,0.4118],[648.8,0.4044],[649.4,0.3971],[650.4,0.3897],[656.2,0.3824],[656.3,0.375],[660.5,0.3676],[661.3,0.3603],[674.1,0.3529],[675.2,0.3456],[677.2,0.3382],[679.9,0.3309],[683.4,0.3235],[689.0,0.3162],[693.2,0.3088],[696.2,0.3015],[704.3,0.2941],[707.2,0.2868],[709.9,0.2794],[711.2,0.2721],[713.4,0.2647],[714.9,0.2574],[723.7,0.25],[730.4,0.2426],[735.8,0.2353],[741.2,0.2279],[750.4,0.2206],[753.6,0.2132],[766.0,0.2059],[771.4,0.1985],[771.5,0.1912],[771.5,0.1838],[778.7,0.1765],[785.1,0.1691],[789.6,0.1618],[794.5,0.1544],[797.3,0.1471],[805.7,0.1397],[806.4,0.1324],[826.1,0.1246],[831.3,0.1168],[842.7,0.109],[857.0,0.1012],[870.6,0.0934],[950.4,0.0856],[1099.7,0.0779],[1156.6,0.0701],[1177.2,0.0623],[1190.5,0.0545],[1222.8,0.0467],[1273.4,0.0389],[1314.8,0.0311],[1404.7,0.0234],[1492.6,0.0156],[1668.5,0.0078],[1700.6,0.0]],"B":[[476.2,0.993],[484.8,0.986],[486.2,0.979],[487.4,0.972],[489.6,0.965],[494.7,0.958],[496.7,0.951],[501.0,0.9441],[505.8,0.9371],[506.6,0.9301],[508.7,0.9231],[510.2,0.9161],[511.0,0.9091],[512.8,0.9021],[514.8,0.8951],[516.6,0.8881],[517.2,0.8811],[518.1,0.8741],[518.2,0.8671],[520.1,0.8601],[521.1,0.8531],[521.2,0.8462],[523.3,0.8392],[525.0,0.8322],[525.8,0.8252],[527.4,0.8182],[527.8,0.8112],[528.8,0.8042],[529.2,0.7972],[530.6,0.7902],[531.0,0.7832],[534.9,0.7762],[535.0,0.7692],[543.4,0.7622],[545.6,0.7552],[546.6,0.7483],[548.0,0.7413],[548.8,0.7343],[549.1,0.7273],[553.7,0.7203],[554.1,0.7133],[555.1,0.7063],[556.5,0.6993],[556.6,0.6923],[556.7,0.6853],[559.6,0.6783],[559.9,0.6713],[562.1,0.6643],[565.2,0.6573],[566.0,0.6503],[567.8,0.6434],[570.8,0.6364],[580.2,0.6294],[581.8,0.6224],[582.6,0.6154],[585.9,0.6084],[586.9,0.6014],[588.3,0.5944],[592.5,0.5874],[594.4,0.5804],[595.4,0.5734],[598.4,0.5664],[600.5,0.5594],[600.5,0.5524],[605.2,0.5455],[606.0,0.5385],[608.8,0.5315],[610.8,0.5245],[611.1,0.5175],[614.3,0.5105],[615.7,0.5035],[617.9,0.4965],[624.2,0.4895],[625.9,0.4825],[632.9,0.4755],[634.2,0.4685],[634.3,0.4615],[636.8,0.4545],[637.1,0.4476],[641.4,0.4406],[644.9,0.4336],[649.6,0.4266],[655.3,0.4196],[657.1,0.4126],[657.1,0.4056],[657.4,0.3986],[659.8,0.3916],[661.8,0.3846],[661.8,0.3776],[664.0,0.3706],[669.7,0.3636],[672.9,0.3566],[674.5,0.3497],[675.5,0.3427],[681.9,0.3357],[683.2,0.3287],[692.3,0.3217],[694.4,0.3147],[696.3,0.3077],[696.4,0.3007],[699.3,0.2937],[700.5,0.2867],[701.0,0.2797],[702.8,0.2727],[709.1,0.2657],[710.4,0.2587],[713.3,0.2517],[715.4,0.2448],[717.5,0.2378],[718.5,0.2308],[725.1,0.2238],[726.0,0.2168],[731.3,0.2098],[735.1,0.2028],[736.4,0.1958],[745.0,0.1888],[745.8,0.1818],[747.7,0.1748],[753.5,0.1678],[754.0,0.1608],[757.4,0.1538],[766.0,0.1469],[770.3,0.1399],[773.2,0.1329],[773.9,0.1259],[774.6,0.1189],[788.8,0.1119],[791.9,0.1049],[796.3,0.0979],[796.5,0.0909],[799.2,0.0839],[821.0,0.0769],[825.6,0.0699],[859.4,0.0629],[871.4,0.0559],[939.0,0.049],[962.3,0.042],[991.7,0.035],[1000.6,0.028],[1014.0,0.021],[1107.2,0.014],[1508.5,0.007],[2110.3,0.0]],"C":[[463.1,0.9925],[465.7,0.9851],[479.8,0.9776],[486.1,0.9701],[489.4,0.9627],[498.7,0.9552],[500.3,0.9478],[502.1,0.9403],[504.0,0.9328],[509.9,0.9254],[510.1,0.9179],[511.8,0.9104],[520.4,0.903],[522.3,0.8955],[532.6,0.888],[533.1,0.8805],[534.5,0.8729],[537.1,0.8654],[537.6,0.8579],[538.4,0.8504],[541.0,0.8428],[541.8,0.8353],[542.1,0.8278],[547.9,0.8203],[550.4,0.8127],[551.0,0.8052],[553.1,0.7977],[553.4,0.7902],[556.7,0.7826],[561.5,0.7751],[565.4,0.7676],[565.9,0.7601],[573.4,0.7525],[578.0,0.745],[581.9,0.7375],[583.4,0.73],[583.6,0.7224],[586.3,0.7149],[587.7,0.7074],[594.3,0.6999],[597.5,0.6923],[601.1,0.6848],[603.7,0.6773],[606.8,0.6698],[609.4,0.6622],[611.7,0.6547],[612.4,0.6472],[613.1,0.6397],[614.1,0.6321],[615.5,0.6246],[616.2,0.6171],[616.7,0.6096],[619.9,0.602],[622.3,0.5945],[623.7,0.587],[624.2,0.5795],[626.1,0.5719],[629.8,0.5644],[630.2,0.5569],[630.3,0.5494],[634.5,0.5418],[635.9,0.5343],[637.9,0.5268],[638.4,0.5193],[641.3,0.5117],[641.7,0.5042],[642.0,0.4967],[643.5,0.4892],[644.1,0.4816],[646.3,0.4741],[649.7,0.4666],[651.8,0.459],[653.5,0.4515],[657.5,0.444],[660.6,0.4365],[662.5,0.4289],[668.1,0.4214],[668.8,0.4139],[671.1,0.4064],[672.9,0.3988],[676.4,0.3913],[676.5,0.3838],[680.7,0.3763],[681.0,0.3687],[684.2,0.3612],[689.8,0.3537],[692.6,0.3462],[701.9,0.3386],[706.2,0.3311],[708.4,0.3236],[714.5,0.3161],[715.8,0.3085],[715.8,0.301],[715.9,0.2935],[720.1,0.286],[722.3,0.2784],[725.2,0.2709],[728.2,0.2634],[729.8,0.2559],[744.7,0.2483],[745.0,0.2408],[755.2,0.2333],[758.2,0.2258],[766.1,0.2182],[769.8,0.2107],[772.6,0.2032],[773.0,0.1957],[778.6,0.1881],[779.1,0.1806],[780.9,0.1731],[800.4,0.1656],[829.2,0.158],[831.6,0.1505],[833.9,0.143],[847.5,0.1355],[849.2,0.1279],[853.7,0.1204],[897.7,0.1129],[905.3,0.1054],[941.4,0.0978],[957.0,0.0903],[961.4,0.0828],[975.6,0.0753],[1006.9,0.0677],[1039.7,0.0602],[1048.8,0.0527],[1321.4,0.0452],[1463.4,0.0376],[1532.3,0.0301],[1545.1,0.0226],[1589.5,0.0151],[1591.3,0.0075],[1968.6,0.0]]},"delta":{"A->B":[-1169.9,-842.8,-796.3,-742.4,-735.1,-697.0,-689.5,-650.0,-596.3,-540.4,-301.2,-258.4,-249.1,-214.9,-207.4,-202.6,-192.6,-190.5,-185.6,-168.5,-137.0,-122.8,-110.8,-109.0,-105.8,-97.0,-97.0,-96.2,-96.1,-90.9,-89.6,-74.3,-72.5,-66.6,-66.3,-63.8,-62.5,-56.9,-52.5,-46.4,-45.1,-34.6,-30.5,-29.2,-26.9,-24.7,-24.5,-23.8,-22.8,-22.5,-20.6,-19.1,-16.6,-15.0,-13.9,-10.9,-7.6,-7.0,-2.4,-1.5,-1.5,0.2,0.3,4.7,6.0,6.7,7.5,8.3,8.4,8.8,9.8,11.6,22.8,24.8,25.6,30.8,31.1,31.5,32.5,36.0,36.7,38.6,41.6,44.7,50.6,53.8,54.4,62.9,77.9,80.3,82.2,82.4,85.7,87.5,91.1,93.2,94.3,94.8,96.0,99.2,101.7,103.1,107.8,119.3,125.1,125.2,128.6,133.2,134.5,135.6,139.3,148.2,150.9,167.5,187.1,188.1,189.8,217.4,226.8,230.9,234.2,261.9,280.5,301.8,336.8,340.0,408.9,585.1,1502.6],"B->C":[-1344.2,-925.0,-438.3,-378.1,-361.4,-247.8,-190.4,-173.9,-160.5,-159.2,-149.5,-145.0,-143.5,-134.8,-134.0,-119.4,-104.2,-103.9,-99.7,-94.3,-77.7,-75.5,-73.6,-72.1,-65.5,-61.9,-60.8,-60.0,-43.4,-38.6,-34.5,-34.2,-32.0,-32.0,-28.9,-26.5,-19.3,-16.7,-16.6,-16.5,-14.9,-11.2,-10.7,-8.3,-3.9,-1.8,0.7,4.4,5.1,6.9,7.4,8.7,11.4,12.6,13.4,13.9,15.0,16.1,23.4,23.5,26.0,26.1,32.7,33.6,34.6,36.0,37.4,37.6,39.4,42.1,43.2,45.3,46.4,46.6,54.2,54.5,56.1,57.6,58.1,58.6,58.9,60.4,62.9,64.3,67.1,71.1,72.3,80.5,81.9,85.1,85.6,87.5,88.4,88.7,89.7,91.3,99.7,103.3,105.6,111.9,116.3,124.9,125.8,131.0,133.2,138.7,144.5,160.0,165.0,170.2,185.9,187.7,190.3,196.7,241.0,250.5,282.4,308.4,322.8,330.9,382.9,384.9,759.3,818.0,826.6,874.9,1071.3,1357.9],"A->C":[-1143.9,-962.3,-770.3,-723.7,-651.1,-629.1,-607.3,-603.6,-516.1,-514.5,-327.3,-296.9,-285.1,-223.7,-218.6,-162.1,-161.7,-150.2,-141.0,-126.2,-114.3,-111.9,-91.3,-81.0,-77.0,-62.8,-61.7,-57.5,-51.5,-51.0,-42.9,-41.3,-39.9,-38.8,-35.3,-34.6,-24.5,-23.0,-20.1,-19.2,-13.7,-12.1,-8.8,-6.5,-5.6,-3.2,3.1,5.2,5.8,6.1,8.3,15.0,23.7,24.4,26.9,27.2,32.6,33.5,40.3,40.3,42.6,43.8,46.0,48.4,53.2,54.0,58.1,63.6,63.9,63.9,64.8,65.9,66.9,68.0,68.3,72.0,73.9,75.0,77.9,79.1,84.1,85.1,86.0,86.4,90.1,91.8,95.9,103.7,103.9,107.2,111.6,113.0,116.3,118.8,119.8,120.0,121.0,123.3,126.7,131.5,142.6,144.9,145.4,146.8,149.5,158.4,159.6,166.5,167.1,169.9,170.0,174.2,193.7,200.0,204.2,257.7,286.3,340.7,356.0,375.7,505.0,535.2,553.7,778.7,790.1,951.3,974.4,1358.2]},"tth":{"A":[434.4,438.8,450.6,456.4,460.6,464.8,467.1,476.4,480.1,480.7,483.3,485.7,492.0,495.1,497.7,497.8,498.3,502.2,504.5,506.8,506.8,508.0,508.4,510.0,511.0,516.5,520.3,520.4,522.0,522.4,522.7,523.8,526.4,526.5,527.3,528.2,529.3,531.3,541.7,546.2,547.6,548.8,550.3,554.7,556.3,559.7,560.3,565.1,569.3,570.6,572.7,572.7,577.5,579.1,580.5,584.8,587.3,589.4,590.0,591.7,592.3,597.5,599.3,601.4,607.7,608.5,609.3,610.5,615.2,615.9,619.4,625.0,627.0,629.0,631.1,635.5,637.1,640.0,642.0,647.6,648.8,649.4,650.4,656.2,656.3,660.5,661.3,674.1,675.2,677.2,679.9,683.4,689.0,693.2,696.2,704.3,707.2,709.9,711.2,713.4,714.9,723.7,730.4,735.8,741.2,750.4,753.6,766.0,771.4,771.5,771.5,778.7,785.1,789.6,794.5,797.3,805.7,806.4,826.1,831.3,842.7,857.0,870.6,950.4,1099.7,1156.6,1177.2,1190.5,1222.8,1273.4,1314.8,1404.7,1492.6,1668.5,1700.6],"B":[476.2,484.8,486.2,487.4,489.6,494.7,496.7,501.0,505.8,506.6,508.7,510.2,511.0,512.8,514.8,516.6,517.2,518.1,518.2,520.1,521.1,521.2,523.3,525.0,525.8,527.4,527.8,528.8,529.2,530.6,531.0,534.9,535.0,543.4,545.6,546.6,548.0,548.8,549.1,553.7,554.1,555.1,556.5,556.6,556.7,559.6,559.9,562.1,565.2,566.0,567.8,570.8,580.2,581.8,582.6,585.9,586.9,588.3,592.5,594.4,595.4,598.4,600.5,600.5,605.2,606.0,608.8,610.8,611.1,614.3,615.7,617.9,624.2,625.9,632.9,634.2,634.3,636.8,637.1,641.4,644.9,649.6,655.3,657.1,657.1,657.4,659.8,661.8,661.8,664.0,669.7,672.9,674.5,675.5,681.9,683.2,692.3,694.4,696.3,696.4,699.3,700.5,701.0,702.8,709.1,710.4,713.3,715.4,717.5,718.5,725.1,726.0,731.3,735.1,736.4,745.0,745.8,747.7,753.5,754.0,757.4,766.0,770.3,773.2,773.9,774.6,788.8,791.9,796.3,796.5,799.2,821.0,825.6,859.4,871.4,939.0,962.3,991.7,1000.6,1014.0,1107.2,1508.5,2110.3],"C":[463.1,465.7,479.8,486.1,489.4,498.7,500.3,502.1,504.0,509.9,510.1,511.8,520.4,522.3,532.6,533.1,534.5,537.1,537.6,538.4,541.0,541.8,542.1,547.9,550.4,551.0,553.1,553.4,556.7,561.5,565.4,565.9,573.4,578.0,581.9,583.4,583.6,586.3,587.7,594.3,597.5,601.1,603.7,606.8,609.4,611.7,612.4,613.1,614.1,615.5,616.2,616.7,619.9,622.3,623.7,624.2,626.1,629.8,630.2,630.3,634.5,635.9,637.9,638.4,641.3,641.7,642.0,643.5,644.1,646.3,649.7,651.8,653.5,657.5,660.6,662.5,668.1,668.8,671.1,672.9,676.4,676.5,680.7,681.0,684.2,689.8,692.6,701.9,706.2,708.4,714.5,715.8,715.8,715.9,720.1,722.3,725.2,728.2,729.8,744.7,745.0,755.2,758.2,766.1,769.8,772.6,773.0,778.6,779.1,780.9,800.4,829.2,831.6,833.9,847.5,849.2,853.7,897.7,905.3,941.4,957.0,961.4,975.6,1006.9,1039.7,1048.8,1321.4,1463.4,1532.3,1545.1,1589.5,1591.3,1968.6]}}</script>
+  <script>
+    const S = JSON.parse(document.getElementById('series').textContent);
+    const C = { A: '#7258a6', B: '#087e8b', C: '#d75a47', grid: '#dfe5e2', text: '#5f6d68', ink: '#17211e' };
+
+    function setup(id) {
+      const canvas = document.getElementById(id);
+      if (!canvas) return null;
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(280, Math.round(rect.width));
+      const height = Math.max(180, Math.round(rect.height));
+      canvas.width = width * ratio; canvas.height = height * ratio;
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      ctx.font = '11px "Cascadia Code", Consolas, monospace';
+      return { ctx, width, height };
+    }
+
+    function frame(ctx, w, h, yTicks, xLabels) {
+      const p = { l: 44, r: 14, t: 14, b: 32 };
+      ctx.strokeStyle = C.grid; ctx.fillStyle = C.text; ctx.lineWidth = 1;
+      yTicks.forEach((t, i) => {
+        const y = p.t + (h - p.t - p.b) * i / (yTicks.length - 1);
+        ctx.beginPath(); ctx.moveTo(p.l, y); ctx.lineTo(w - p.r, y); ctx.stroke();
+        ctx.fillText(t, 4, y + 4);
+      });
+      if (xLabels) xLabels.forEach((t, i) => {
+        const x = p.l + (w - p.l - p.r) * i / (xLabels.length - 1);
+        ctx.fillText(t, x - 10, h - 12);
+      });
+      return p;
+    }
+
+    function drawTimeline() {
+      const s = setup('timelineChart'); if (!s) return;
+      const { ctx, width, height } = s;
+      const p = frame(ctx, width, height, ['49', '47', '45', '43', '41'],
+        ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']);
+      const rate = [45, 45, 45, 48, 48, 47, 42, 45, 46];
+      const first = [.911, .844, .848, .878, .939, .936, .791, .913, .851];
+      const cond = ['A', 'A', 'A', 'B', 'B', 'B', 'C', 'C', 'C'];
+      const x = i => p.l + (width - p.l - p.r) * i / 8;
+      const y = v => p.t + (49 - v) / 8 * (height - p.t - p.b);
+      const y2 = v => p.t + (0.95 - v) / 0.20 * (height - p.t - p.b);
+      [[0, 2], [3, 5], [6, 8]].forEach(([a, b]) => {
+        ctx.strokeStyle = C[cond[a]]; ctx.lineWidth = 2.4; ctx.beginPath();
+        for (let i = a; i <= b; i++) { i === a ? ctx.moveTo(x(i), y(rate[i])) : ctx.lineTo(x(i), y(rate[i])); }
+        ctx.stroke();
+        ctx.setLineDash([4, 3]); ctx.lineWidth = 1.6; ctx.beginPath();
+        for (let i = a; i <= b; i++) { i === a ? ctx.moveTo(x(i), y2(first[i])) : ctx.lineTo(x(i), y2(first[i])); }
+        ctx.stroke(); ctx.setLineDash([]);
+      });
+      rate.forEach((v, i) => {
+        ctx.fillStyle = C[cond[i]];
+        ctx.beginPath(); ctx.arc(x(i), y(v), 4.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x(i), y2(first[i]), 3, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.fillStyle = C.text;
+      ctx.fillText('— hits/min', width - 150, 18);
+      ctx.fillText('· · 首發率', width - 70, 18);
+    }
+
+    function drawCycle() {
+      const s = setup('cycleChart'); if (!s) return;
+      const { ctx, width, height } = s;
+      const data = [['A', 630.5, 686.5], ['B', 573.4, 669.4], ['C', 610.4, 720.1]];
+      const max = 1400, p = { l: 44, r: 14, t: 18, b: 40 };
+      const plotH = height - p.t - p.b, bw = (width - p.l - p.r) / 3 * 0.5;
+      ctx.strokeStyle = C.grid;
+      [0, 350, 700, 1050, 1400].forEach(v => {
+        const y = p.t + (1 - v / max) * plotH;
+        ctx.beginPath(); ctx.moveTo(p.l, y); ctx.lineTo(width - p.r, y); ctx.stroke();
+        ctx.fillStyle = C.text; ctx.fillText(String(v), 4, y + 4);
+      });
+      data.forEach(([label, centre, periph], i) => {
+        const cx = p.l + (width - p.l - p.r) * (i + 0.5) / 3;
+        const hc = centre / max * plotH, hp = periph / max * plotH;
+        ctx.fillStyle = '#b9c4c0';
+        ctx.fillRect(cx - bw / 2, p.t + plotH - hc, bw, hc);
+        ctx.fillStyle = C[label];
+        ctx.fillRect(cx - bw / 2, p.t + plotH - hc - hp, bw, hp);
+        ctx.fillStyle = C.ink;
+        ctx.fillText(Math.round(centre + periph) + ' ms', cx - 26, p.t + plotH - hc - hp - 6);
+        ctx.fillStyle = C.text;
+        ctx.fillText(label, cx - 4, height - 20);
+      });
+      ctx.fillStyle = '#b9c4c0'; ctx.fillRect(p.l, height - 12, 9, 9);
+      ctx.fillStyle = C.text; ctx.fillText('回中心', p.l + 14, height - 4);
+      ctx.fillStyle = C.B; ctx.fillRect(p.l + 72, height - 12, 9, 9);
+      ctx.fillStyle = C.text; ctx.fillText('周邊拉槍', p.l + 86, height - 4);
+    }
+
+    function drawKM() {
+      const s = setup('kmChart'); if (!s) return;
+      const { ctx, width, height } = s;
+      const p = frame(ctx, width, height, ['1.0', '0.75', '0.50', '0.25', '0'],
+        ['0', '400', '800', '1200', '1600 ms']);
+      const x = t => p.l + Math.min(t, 1600) / 1600 * (width - p.l - p.r);
+      const y = v => p.t + (1 - v) * (height - p.t - p.b);
+      ['A', 'B', 'C'].forEach(key => {
+        const curve = S.km[key];
+        ctx.strokeStyle = C[key]; ctx.lineWidth = 2.1; ctx.beginPath();
+        ctx.moveTo(x(0), y(1));
+        let prev = 1;
+        curve.forEach(([t, surv]) => { ctx.lineTo(x(t), y(prev)); ctx.lineTo(x(t), y(surv)); prev = surv; });
+        ctx.lineTo(x(1600), y(prev));
+        ctx.stroke();
+      });
+      ctx.strokeStyle = C.grid; ctx.setLineDash([3, 3]);
+      [[0.5, '中位'], [0.1, 'p90']].forEach(([v]) => {
+        ctx.beginPath(); ctx.moveTo(p.l, y(v)); ctx.lineTo(width - p.r, y(v)); ctx.stroke();
+      });
+      ctx.setLineDash([]);
+      ['A', 'B', 'C'].forEach((key, i) => {
+        ctx.fillStyle = C[key]; ctx.fillText(key, width - 60 + i * 18, 20);
+      });
+    }
+
+    function drawDelta() {
+      const s = setup('deltaChart'); if (!s) return;
+      const { ctx, width, height } = s;
+      const p = { l: 52, r: 14, t: 16, b: 34 };
+      const lim = 400, rows = [['A->B', 6.0], ['B->C', 34.1], ['A->C', 50.8]];
+      const x = v => p.l + (Math.max(-lim, Math.min(lim, v)) + lim) / (2 * lim) * (width - p.l - p.r);
+      ctx.strokeStyle = C.grid;
+      [-400, -200, 0, 200, 400].forEach(v => {
+        ctx.beginPath(); ctx.moveTo(x(v), p.t); ctx.lineTo(x(v), height - p.b); ctx.stroke();
+        ctx.fillStyle = C.text; ctx.fillText(String(v), x(v) - 12, height - 16);
+      });
+      ctx.strokeStyle = C.text; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(x(0), p.t); ctx.lineTo(x(0), height - p.b); ctx.stroke();
+      rows.forEach(([key, med], i) => {
+        const yy = p.t + 30 + i * 58;
+        const colour = key === 'A->B' ? C.B : key === 'B->C' ? C.C : C.A;
+        ctx.fillStyle = C.ink; ctx.fillText(key, 4, yy + 4);
+        ctx.fillStyle = colour + '55';
+        S.delta[key].forEach(v => { ctx.fillRect(x(v) - 1, yy - 13, 2, 26); });
+        ctx.fillStyle = colour;
+        ctx.beginPath(); ctx.arc(x(med), yy, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = C.text;
+        ctx.fillText((med > 0 ? '+' : '') + med.toFixed(1), x(med) + 9, yy - 16);
+      });
+      ctx.fillStyle = C.text; ctx.fillText('右側條件較慢 →', width - 130, height - 2);
+    }
+
+    function drawAll() { drawTimeline(); drawCycle(); drawKM(); drawDelta(); }
+    window.addEventListener('resize', drawAll);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawAll); else drawAll();
+  </script>
+</body>
+</html>

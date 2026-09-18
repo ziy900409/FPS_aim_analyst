@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Spider Shot Wide v1 · 雙滑鼠 × 握法比較分析 Workflow</title>
+  <style>
+    :root {
+      --page: #eef1ef;
+      --paper: #ffffff;
+      --ink: #17211e;
+      --muted: #5f6d68;
+      --line: #cfd7d3;
+      --line-dark: #9aa8a2;
+      --teal: #087e8b;
+      --teal-soft: #dceff1;
+      --coral: #d75a47;
+      --coral-soft: #fae7e3;
+      --amber: #ad7417;
+      --amber-soft: #fff0cb;
+      --green: #257552;
+      --green-soft: #e1f1e9;
+      --violet: #7258a6;
+      --violet-soft: #ece7f5;
+      --radius: 6px;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --sans: Inter, "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background: var(--page);
+      font-family: var(--sans);
+      line-height: 1.62;
+    }
+    a { color: var(--teal); text-underline-offset: 3px; }
+    code { font-family: var(--mono); font-size: 0.9em; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+
+    .masthead { position: relative; min-height: 300px; overflow: hidden; color: #fff; background: #171d1c; }
+    .masthead img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 78% 51%; opacity: 0.55; }
+    .masthead::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(14,19,18,0.98) 0%, rgba(14,19,18,0.9) 44%, rgba(14,19,18,0.2) 80%); }
+    .masthead-inner { position: relative; z-index: 1; display: grid; align-content: center; min-height: 300px; max-width: 760px; padding: 32px 0; }
+    .eyebrow { margin: 0 0 10px; color: #8fdce2; font: 750 0.76rem/1.2 var(--mono); text-transform: uppercase; }
+    h1 { margin: 0; max-width: 700px; font-size: clamp(1.9rem, 4.6vw, 3.2rem); line-height: 1.1; }
+    .lede { max-width: 660px; margin: 16px 0 0; color: #d9e1de; font-size: 1rem; }
+    .status-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .status { display: inline-flex; align-items: center; min-height: 28px; padding: 4px 9px; border: 1px solid rgba(255,255,255,0.24); border-radius: 4px; background: rgba(0,0,0,0.28); color: #edf5f2; font-size: 0.74rem; font-weight: 700; }
+    .status.warn { border-color: #d8ab54; color: #ffdda0; }
+
+    .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 30px; padding: 30px 0 60px; }
+    .toc { position: sticky; top: 18px; align-self: start; }
+    .toc-title { margin: 0 0 8px; color: var(--muted); font: 700 0.72rem/1.2 var(--mono); text-transform: uppercase; }
+    .toc a { display: block; padding: 7px 9px; border-left: 2px solid var(--line); color: var(--muted); text-decoration: none; font-size: 0.8rem; }
+    .toc a:hover, .toc a:focus-visible { border-left-color: var(--teal); color: var(--ink); background: #fff; }
+    main { min-width: 0; }
+    section { margin-bottom: 44px; scroll-margin-top: 20px; }
+    .section-no { display: block; margin-bottom: 4px; color: var(--coral); font: 750 0.76rem/1.2 var(--mono); }
+    h2 { margin: 0 0 14px; font-size: clamp(1.4rem, 3vw, 1.95rem); line-height: 1.2; }
+    h3 { margin: 0 0 8px; font-size: 1rem; line-height: 1.35; }
+    p { margin: 0 0 12px; }
+    .section-intro { max-width: 840px; color: var(--muted); }
+
+    .decision { display: grid; grid-template-columns: 1.05fr 0.95fr; border: 1px solid var(--line-dark); border-left: 5px solid var(--coral); border-radius: var(--radius); background: var(--paper); }
+    .decision > div { padding: 22px; }
+    .decision > div + div { border-left: 1px solid var(--line); background: #f7f9f8; }
+    .decision strong { display: block; margin-bottom: 6px; font-size: 1.06rem; }
+    .decision p { color: var(--muted); font-size: 0.88rem; }
+
+    .task-facts { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .fact { padding: 16px; }
+    .fact + .fact { border-left: 1px solid var(--line); }
+    .fact span { display: block; color: var(--muted); font-size: 0.72rem; }
+    .fact strong { display: block; margin-top: 4px; font-size: 1rem; }
+
+    .matrix { width: 100%; border-collapse: collapse; border: 1px solid var(--line); background: var(--paper); font-size: 0.78rem; }
+    .matrix th, .matrix td { padding: 9px 11px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .matrix th { background: #f0f3f1; font-size: 0.72rem; }
+    .matrix .yes { color: var(--green); font-weight: 750; }
+    .matrix .no { color: var(--coral); font-weight: 750; }
+    .matrix .partial { color: var(--amber); font-weight: 750; }
+    .matrix tr.gpw td:first-child { border-left: 4px solid var(--violet); }
+    .matrix tr.d122 td:first-child { border-left: 4px solid var(--teal); }
+    .matrix tr.d131 td:first-child { border-left: 4px solid var(--coral); }
+    .matrix-wrap { overflow-x: auto; }
+
+    .timeline { position: relative; margin: 6px 0 0; padding: 40px 0 62px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .timeline-track { position: absolute; left: 2%; right: 2%; top: 58px; height: 2px; background: var(--line-dark); }
+    .run { position: absolute; top: 50px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; border: 2px solid var(--paper); }
+    .run.gpw { background: var(--violet); }
+    .run.d122 { background: var(--teal); }
+    .run.d131 { background: var(--coral); }
+    .tl-label { position: absolute; top: 18px; transform: translateX(-50%); font: 700 0.72rem/1.2 var(--mono); white-space: nowrap; }
+    .tl-label.gpw { color: var(--violet); }
+    .tl-label.d122 { color: var(--teal); }
+    .tl-label.d131 { color: var(--coral); }
+    .tl-gap { position: absolute; top: 80px; transform: translateX(-50%); padding: 3px 8px; border: 1px dashed var(--line-dark); border-radius: 4px; background: #f7f9f8; color: var(--muted); font: 700 0.7rem/1.3 var(--mono); white-space: nowrap; }
+
+    .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--line); }
+    .flow-step { position: relative; min-height: 150px; padding: 14px 12px; background: var(--paper); }
+    .flow-step .time { color: var(--teal); font: 700 0.72rem/1.2 var(--mono); }
+    .flow-step strong { display: block; margin: 8px 0 5px; font-size: 0.86rem; }
+    .flow-step small { display: block; color: var(--muted); font-size: 0.7rem; line-height: 1.45; }
+
+    .stage { border: 1px solid var(--line); border-left: 4px solid var(--teal); border-radius: var(--radius); background: var(--paper); padding: 18px; margin-bottom: 12px; }
+    .stage:nth-of-type(2) { border-left-color: var(--violet); }
+    .stage:nth-of-type(3) { border-left-color: var(--amber); }
+    .stage:nth-of-type(4) { border-left-color: var(--coral); }
+    .stage:nth-of-type(5) { border-left-color: var(--green); }
+    .stage-label { color: var(--muted); font: 700 0.7rem/1.2 var(--mono); text-transform: uppercase; }
+    .io { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 12px 0 0; }
+    .io div { padding: 11px 13px; border: 1px solid var(--line); border-radius: 4px; background: #f7f9f8; font-size: 0.78rem; }
+    .io span { display: block; color: var(--muted); font: 700 0.66rem/1.4 var(--mono); text-transform: uppercase; }
+    .refuse { margin-top: 10px; padding: 11px 13px; border: 1px solid #d8b66f; border-radius: 4px; background: var(--amber-soft); color: #5d4519; font-size: 0.79rem; }
+    .refuse strong { color: #49340f; }
+    .stage ul { margin: 10px 0 0; padding-left: 19px; }
+    .stage li { margin: 5px 0; font-size: 0.83rem; }
+
+    .tier { border: 1px solid var(--line); border-top: 4px solid var(--teal); border-radius: var(--radius); background: var(--paper); padding: 18px; margin-bottom: 12px; }
+    .tier:nth-of-type(2) { border-top-color: var(--coral); }
+    .tier:nth-of-type(3) { border-top-color: var(--amber); }
+    .tier-label { color: var(--muted); font: 700 0.7rem/1.2 var(--mono); text-transform: uppercase; }
+    .metric-line { display: grid; grid-template-columns: minmax(160px, 0.85fr) 1.5fr 0.7fr; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); align-items: start; }
+    .metric-line:first-of-type { border-top: 0; }
+    .metric-name strong { display: block; font-size: 0.89rem; }
+    .metric-name code { color: var(--teal); }
+    .metric-definition { color: var(--muted); font-size: 0.81rem; }
+    .metric-output { color: var(--ink); font: 700 0.73rem/1.5 var(--mono); }
+    .tag { display: inline-flex; margin-top: 5px; padding: 2px 6px; border-radius: 3px; font-size: 0.66rem; font-weight: 750; background: var(--green-soft); color: var(--green); }
+    .tag.new { background: var(--violet-soft); color: var(--violet); }
+    .tag.quality { background: var(--amber-soft); color: var(--amber); }
+    .tag.risk { background: var(--coral-soft); color: var(--coral); }
+
+    .formula { padding: 13px 15px; border-left: 3px solid var(--teal); background: #f6f8f7; color: #31413c; font: 0.78rem/1.7 var(--mono); overflow-x: auto; }
+    .callout { padding: 15px 17px; border: 1px solid #d8b66f; border-radius: var(--radius); background: var(--amber-soft); color: #5d4519; font-size: 0.83rem; }
+    .callout strong { color: #49340f; }
+    .callout.stop { border-color: var(--coral); background: var(--coral-soft); color: #6c2b1e; }
+    .callout.stop strong { color: #55200f; }
+
+    .rules { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .rule-box { padding: 17px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .rule-box.keep { border-top: 4px solid var(--green); }
+    .rule-box.exclude { border-top: 4px solid var(--coral); }
+    .rule-box ul { margin: 10px 0 0; padding-left: 19px; }
+    .rule-box li { margin: 6px 0; font-size: 0.83rem; }
+
+    .contrast-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .contrast { border: 1px solid var(--line); border-top: 4px solid var(--violet); border-radius: var(--radius); background: var(--paper); padding: 18px; }
+    .contrast:nth-child(2) { border-top-color: var(--coral); }
+    .contrast .cname { color: var(--muted); font: 700 0.7rem/1.2 var(--mono); text-transform: uppercase; }
+    .contrast h3 { margin: 8px 0 6px; }
+    .contrast .pair { font: 700 0.82rem/1.5 var(--mono); color: var(--ink); }
+    .contrast p { margin: 8px 0 0; color: var(--muted); font-size: 0.82rem; }
+
+    .files { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .files ul, .sources ul { margin: 0; padding-left: 20px; }
+    .files li, .sources li { margin: 7px 0; font-size: 0.8rem; }
+    .sources { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    footer { padding: 22px 0 38px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.75rem; }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; display: grid; grid-template-columns: repeat(2, 1fr); }
+      .toc-title { grid-column: 1 / -1; }
+      .decision, .contrast-grid, .rules, .io { grid-template-columns: 1fr; }
+      .decision > div + div { border-left: 0; border-top: 1px solid var(--line); }
+      .flow { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 680px) {
+      .shell { width: min(100% - 20px, 1180px); }
+      .task-facts { grid-template-columns: 1fr; }
+      .fact + .fact { border-left: 0; border-top: 1px solid var(--line); }
+      .flow { grid-template-columns: 1fr; }
+      .metric-line { grid-template-columns: 1fr; gap: 5px; }
+    }
+    @media print {
+      body { background: #fff; }
+      .toc { display: none; }
+      .layout { display: block; }
+      section, .stage, .tier, .contrast { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <img src="../../../exec-plan/active/stage12/wp-57-spider-shot-wide-flick/captures/peripheral-R-fov75.png" alt="Spider Shot Wide v1 在 FOV 75 下的右側周邊目標實機畫面">
+    <div class="shell masthead-inner">
+      <p class="eyebrow">Analysis workflow · 2026-09-17 · design only</p>
+      <h1>雙滑鼠 × 握法比較<br>分析 Workflow</h1>
+      <p class="lede">S01 在 <code>spider-shot-wide-v1</code> 上跑了 3 條件 × 3 runs。同 seed 讓 43 次周邊 presentation 逐位相同，可做配對分析；但三個條件在時間上串成一列，順序無法事後拆開。這份文件定義流程、判準與拒答條件，不含任何結果。</p>
+      <div class="status-row">
+        <span class="status">S01 · 9 runs · 417 peripheral presentations</span>
+        <span class="status">rngSeed 57001 · 刺激序列逐位相同</span>
+        <span class="status warn">n=1 · 順序未 counterbalance</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell layout">
+    <nav class="toc" aria-label="文件目錄">
+      <p class="toc-title">Workflow 結構</p>
+      <a href="#scope">00 這份文件的邊界</a>
+      <a href="#data">01 資料實況</a>
+      <a href="#contrast">02 兩個對比</a>
+      <a href="#order">03 順序共線診斷</a>
+      <a href="#cleaning">04 資料清理與排除</a>
+      <a href="#pipeline">05 五階段流程</a>
+      <a href="#metrics">06 指標層</a>
+      <a href="#stats">07 統計與判準</a>
+      <a href="#deliver">08 交付物與落點</a>
+      <a href="#limits">09 不會說什麼</a>
+      <a href="#sources">10 依據</a>
+    </nav>
+
+    <main>
+      <section id="scope">
+        <span class="section-no">00 / SCOPE</span>
+        <h2>這是流程設計，不是結果</h2>
+        <div class="decision">
+          <div>
+            <strong>本文件定義「怎麼分析」，一個數字都不下結論。</strong>
+            <p>所有指標值、Δ 與 CI 都留到 pipeline 跑完後的結果報告。這裡固定的是：哪些 trial 進得來、用哪些既有構念、怎麼配對、什麼情況下拒絕回答。</p>
+            <p>目的是讓「換了門檻」「換了母體」在 diff 裡看得見，而不是事後追認。</p>
+          </div>
+          <div>
+            <strong>範圍：先只做 <code>spider-shot-wide-v1</code>。</strong>
+            <p>同一批資料夾另有 <code>micro_flick_three_target_test_v9</code> 與 <code>tracking_core_pr_3deg_14dps</code> 各 3 runs，視 wide 的訊號大小再決定是否擴張。pipeline 的 long-format 輸出預留 <code>drillId</code> 欄，屆時不必重寫。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="data">
+        <span class="section-no">01 / DATA</span>
+        <h2>資料實況（掃描自 9 份匯出）</h2>
+        <p class="section-intro">受試者 S01，2026-09-15。三個條件的硬體與遊戲參數完全一致，這是這批資料最強的地方；受試者只有一位、順序只有一種，這是最弱的地方。</p>
+
+        <div class="task-facts" aria-label="全 9 run 一致的固定條件">
+          <div class="fact"><span>感度 / DPI</span><strong>1.3 · 800</strong></div>
+          <div class="fact"><span>FOV / 解析度</span><strong>75 · 1920×1080</strong></div>
+          <div class="fact"><span>顯示 / sim</span><strong>601 Hz · 128 Hz</strong></div>
+          <div class="fact"><span>rngSeed</span><strong>57001（全一致）</strong></div>
+        </div>
+
+        <div style="height:14px"></div>
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <caption style="text-align:left;color:var(--muted);font-size:0.75rem;padding:0 0 6px">每 run 60 秒。<code>adsDown</code> = 右鍵按下次數；<code>usp_s_laser</code> 無 <code>ads</code> 區塊，右鍵 inert，不影響 FOV、gain 或命中幾何。</caption>
+            <thead><tr><th>開始時間 (UTC)</th><th>條件</th><th>peripheral</th><th>fire</th><th>adsDown</th><th>validity</th></tr></thead>
+            <tbody>
+              <tr class="gpw"><td>06:56:38</td><td>GPW1 / 1-2-2</td><td>45</td><td>103</td><td>0</td><td class="yes">全綠</td></tr>
+              <tr class="gpw"><td>06:58:20</td><td>GPW1 / 1-2-2</td><td>45</td><td>106</td><td>0</td><td class="yes">全綠</td></tr>
+              <tr class="gpw"><td>06:59:58</td><td>GPW1 / 1-2-2</td><td>46</td><td>113</td><td>0</td><td class="yes">全綠</td></tr>
+              <tr class="d122"><td>08:07:34</td><td>DK / 1-2-2</td><td>49</td><td>106</td><td>1</td><td class="yes">全綠</td></tr>
+              <tr class="d122"><td>08:09:14</td><td>DK / 1-2-2</td><td>49</td><td>106</td><td>0</td><td class="yes">全綠</td></tr>
+              <tr class="d122"><td>08:10:48</td><td>DK / 1-2-2</td><td>47</td><td>105</td><td>0</td><td class="yes">全綠</td></tr>
+              <tr class="d131"><td>08:27:18</td><td>DK / 1-3-1</td><td>43</td><td>95</td><td>34</td><td class="yes">全綠</td></tr>
+              <tr class="d131"><td>08:29:22</td><td>DK / 1-3-1</td><td>46</td><td>105</td><td>28</td><td class="yes">全綠</td></tr>
+              <tr class="d131"><td>08:30:58</td><td>DK / 1-3-1</td><td>47</td><td>108</td><td>17</td><td class="yes">全綠</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="height:16px"></div>
+        <h3>三件改變方法的實況</h3>
+        <div class="rules">
+          <article class="rule-box keep">
+            <h3>① 刺激序列逐位相同 ⇒ 可配對</h3>
+            <p style="color:var(--muted);font-size:0.83rem;margin:0">9 個 run 的 peripheral presentation 座標序列完全一致，共同前綴 <b>43 次</b>。因此可以按 presentation index 配對，比單純比中位數強一級。每條件約 <b>43 × 3 reps ≈ 129</b> 個可配對 trial。</p>
+          </article>
+          <article class="rule-box exclude">
+            <h3>② D_deg 幾乎固定 ⇒ 刪掉劑量反應</h3>
+            <p style="color:var(--muted);font-size:0.83rem;margin:0">實測角距 <b>47.7°–51.9°（中位數 49.6°）</b>，不是 proposal doc 寫的 40–70°。這個 spawn 設定沒有劑量範圍，<code>distance_slope</code> 與 D–MT 散佈圖在本批資料上不成立，<b>移除</b>；D 只當雜訊共變量與分層檢查。</p>
+          </article>
+        </div>
+        <div style="height:12px"></div>
+        <div class="callout"><strong>③ 匯出無 <code>mouseSamples</code> 區塊。</strong>本批資料無法比較兩隻滑鼠的 polling / sensor 層特性，只能比行為結果。已確認實驗全程 polling 與 sensor 設定維持一致，因此這不是混淆來源，而是<b>不可量測的維度</b>——報告中不得出現任何關於硬體取樣差異的推論。</div>
+      </section>
+
+      <section id="contrast">
+        <span class="section-no">02 / CONTRASTS</span>
+        <h2>兩個對比，平等呈現</h2>
+        <p class="section-intro">GPW1 的三個 run 使用 1-2-2 握法，這讓設計變成兩個各自控制住一個因子的對比。兩者在報告中<b>並列、同等篇幅、同一套判準</b>；各自的限制寫在各自旁邊，不用強弱分級去暗示可信度排序。</p>
+        <div class="contrast-grid">
+          <article class="contrast">
+            <span class="cname">Contrast M · Mouse</span>
+            <h3>固定握法，換滑鼠</h3>
+            <p class="pair">GPW1 / 1-2-2 &nbsp;→&nbsp; DK / 1-2-2</p>
+            <p>握法、感度、DPI、FOV、seed 全部相同，只換裝置。限制：兩組相隔約 <b>68 分鐘</b>，滑鼠效應與該段時間內的熱身／疲勞共線。</p>
+          </article>
+          <article class="contrast">
+            <span class="cname">Contrast G · Grip</span>
+            <h3>固定滑鼠，換握法</h3>
+            <p class="pair">DK / 1-2-2 &nbsp;→&nbsp; DK / 1-3-1</p>
+            <p>同一隻滑鼠、同一段時間。限制：兩組相隔約 <b>17 分鐘</b>，時間共線較小但非零；且 1-3-1 有大量非預期右鍵觸發，需獨立檢視是否與表現交纏。</p>
+          </article>
+        </div>
+        <div style="height:12px"></div>
+        <div class="callout stop"><strong>不可當證據的恆等式：</strong><code>Δ(GPW1/1-2-2 → DK/1-3-1) ≡ Δ(M) + Δ(G)</code>。這是代數恆等，不是獨立驗證。報告中不得把它呈現為「兩個對比互相佐證」。</div>
+      </section>
+
+      <section id="order">
+        <span class="section-no">03 / ORDER</span>
+        <h2>把順序共線變成可算的數字</h2>
+        <p class="section-intro">9 個 run 橫跨 06:56–08:32，三個條件各自擠成一團。這不是靠免責聲明處理的問題，而是一個要算出數字、放在每個 Δ 旁邊的診斷。</p>
+
+        <div class="timeline" aria-label="9 個 run 的 wall-clock 時間軸">
+          <div class="timeline-track"></div>
+          <span class="tl-label gpw" style="left:5.3%">GPW1 / 1-2-2</span>
+          <span class="run gpw" style="left:2.0%"></span>
+          <span class="run gpw" style="left:3.7%"></span>
+          <span class="run gpw" style="left:5.3%"></span>
+          <span class="tl-gap" style="left:38.5%">約 68 分鐘空窗 · Contrast M 的共線區</span>
+          <span class="tl-label d122" style="left:73.5%">DK / 1-2-2</span>
+          <span class="run d122" style="left:71.8%"></span>
+          <span class="run d122" style="left:73.5%"></span>
+          <span class="run d122" style="left:75.0%"></span>
+          <span class="tl-gap" style="left:84.5%">約 17 分鐘 · Contrast G 的共線區</span>
+          <span class="tl-label d131" style="left:93.3%">DK / 1-3-1</span>
+          <span class="run d131" style="left:91.2%"></span>
+          <span class="run d131" style="left:93.3%"></span>
+          <span class="run d131" style="left:94.9%"></span>
+        </div>
+
+        <div style="height:14px"></div>
+        <h3>漂移外推診斷（每個 Δ 都要附）</h3>
+        <div class="formula">
+          drift_slope = 同條件內 run1 → run3 的指標斜率（單位：指標/分鐘，三條件各算一條）<br>
+          drift_expected(M) = median(drift_slope) × 68 min<br>
+          drift_expected(G) = median(drift_slope) × 17 min<br>
+          <br>
+          若 |Δ_observed| ≲ |drift_expected| &nbsp;⇒&nbsp; 該對比標記為「與時間漂移不可分離」，只描述不歸因
+        </div>
+        <div style="height:12px"></div>
+        <div class="callout">同條件內只有 3 個 run，斜率本身極不穩定。因此 <code>drift_slope</code> 取三條件的中位數、並同時報三條件各自的值；若三者方向不一致，就直接判定漂移<b>不可估</b>，兩個對比一律降級為描述性。這個判定要印在結果之前，不是附註。</div>
+      </section>
+
+      <section id="cleaning">
+        <span class="section-no">04 / CLEANING</span>
+        <h2>資料清理與排除</h2>
+        <p class="section-intro">原則只有一條：<b>排除不等於刪除</b>。每一筆被排除的 run 或 trial 都在 <code>per-trial.csv</code> 留一列、帶 reason code，並在報告印出逐步計數表。靜默丟掉的資料無法稽核，也無法讓別人重跑出同一個數字。清理分三級：硬閘（無裁量）、修剪（改母體不改樣本）、trial 級處置（有裁量，必須事前固定）。</p>
+
+        <article class="stage">
+          <span class="stage-label">Level 1 · Run-level hard blockers（自動判定，無裁量空間）</span>
+          <h3>整個 run 出局的條件</h3>
+          <div class="matrix-wrap">
+            <table class="matrix">
+              <thead><tr><th>判定</th><th>依據</th><th>本批 9 run 實測</th></tr></thead>
+              <tbody>
+                <tr><td><code>validity</code> 五旗任一為真</td><td>corridorExceeded / perfFloor / recorderOverflow / bufferOverflow / pointerLockLost</td><td class="yes">0 筆觸發</td></tr>
+                <tr><td><code>suspect</code> 為真</td><td>匯出自帶的整體可疑旗</td><td class="yes">0 筆觸發</td></tr>
+                <tr><td>cohort 參數不符</td><td><code>drillId / rngSeed / sensitivity / dpi / fovDeg / cssW×cssH</code> 與 cohort 定義不同 ⇒ 不可合併</td><td class="yes">9/9 一致</td></tr>
+                <tr><td>detection 全滅</td><td>KI-031：aim 更新率低於 sim 率時 detected 可能歸零而 CI 仍全綠</td><td class="yes">80–85% tick 有位移，0 筆觸發</td></tr>
+                <tr><td>周邊 presentation 不足</td><td>少於共同前綴長度（43）⇒ 無法進配對分析</td><td class="yes">最少 43，0 筆觸發</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="refuse"><strong>本批結果：9 個 run 全部通過硬閘，沒有任何 run 被排除。</strong>這一級仍必須執行並印出計數——「沒有東西被排除」本身就是需要被記錄的結果，不是可以省略的步驟。</div>
+        </article>
+
+        <article class="stage">
+          <span class="stage-label">Level 2 · Run-level 修剪（改母體，不丟 run）</span>
+          <h3>兩段必須切掉的非任務時間</h3>
+          <ul>
+            <li><b>倒數期修剪</b>：9 個 run 的第一個 <code>visible</code> 事件皆落在 <code>+3.0 s</code>。前 3 秒為倒數期，一律不計入 active duration，也不產生 trial。</li>
+            <li><b>尾端空轉修剪</b>：<code>GPW1</code> 第一個 run 的錄製長度為 <b>8713 ticks</b>，其餘 8 個 run 皆為 <b>8065 ticks</b>。多出的 648 ticks（5.06 s）全為零位移，且起點正好在 tick 8066 —— 也就是其他 run 的結束點。判定為 <b>drill 結束後的錄製尾巴，非中途中斷</b>，以最後一個事件截斷，<b>不丟 run</b>。</li>
+            <li>修剪後 active duration 全 9 run 一致為 <b>60.0 s</b>，這是所有速率型指標的共同分母。</li>
+          </ul>
+          <div class="refuse"><strong>這是本批唯一一個會實際改變結論的清理步驟。</strong>若不做尾端修剪，<code>hits_per_min</code> 的分母會被灌水 <b>8%</b>，<code>GPW1</code> 會被一個純粹的錄製假象拖慢——而且方向恰好會讓 Contrast M 看起來有利於 DK。修剪前後的值都必須印出來。</div>
+        </article>
+
+        <article class="stage">
+          <span class="stage-label">Level 3 · Trial-level 處置（有裁量，事前固定）</span>
+          <h3>每一類 trial 的去向</h3>
+          <div class="matrix-wrap">
+            <table class="matrix">
+              <thead><tr><th>類別</th><th>主分析</th><th>敏感度分析</th><th>本批實況</th></tr></thead>
+              <tbody>
+                <tr><td>timeout</td><td class="partial">保留在分母（右截）</td><td>另報 timeout rate</td><td>待 S0 統計</td></tr>
+                <tr><td>未開火</td><td class="partial">保留在 first-shot rate 分母</td><td>—</td><td>待 S0 統計</td></tr>
+                <tr><td>疑似 repositioning</td><td class="no">主分析排除</td><td>納回</td><td>門檻跨硬體未重校準，見下方警語</td></tr>
+                <tr><td>baseline coverage 不足（KI-034）</td><td class="partial">只影響 <code>reaction_ms</code></td><td>其餘指標不受影響</td><td>待逐 trial 檢查</td></tr>
+                <tr><td>與 ADS hold 重疊</td><td class="yes">保留</td><td>with / without 分層</td><td><b>1-3-1：22/43、22/46、15/47（32–48%）</b></td></tr>
+                <tr><td>presentation index &gt; 43</td><td class="no">配對分析排除</td><td>run-level 速率指標仍使用完整 run</td><td>各 run 多出 0–6 筆</td></tr>
+                <tr><td>統計離群值</td><td class="yes">不剔除</td><td>改用 median / p90 吸收</td><td>長尾是構念的一部分</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="height:12px"></div>
+          <div class="callout stop"><strong>ADS 重疊的 trial 絕對不能排除。</strong>1-3-1 條件下有三分之一到一半的 trial 與右鍵按住重疊；把它們拿掉等於把<b>握法效應本身</b>挖掉，剩下的 Δ(G) 會變成「1-3-1 在它沒有誤觸的時候」與 1-2-2 的比較，那不是任何人想問的問題。正確處置是主分析全保留，另做 with/without 分層，回答「Δ(G) 有多少是由誤觸 trial 驅動的」。</div>
+
+          <div style="height:12px"></div>
+          <div class="callout"><strong>repositioning 門檻的跨硬體警告：</strong>150 ms / 2 deg/s 是在<b>單一硬體</b>的四份 run 上校準的。本批跨兩隻滑鼠，門檻效度未經重校準。處置：逐條件報標註率；<b>若標註率本身在條件間差異明顯，該門檻即不可作為共同排除依據</b>，改為只分層、不排除——否則排除規則會變成對其中一個條件的系統性懲罰。</div>
+
+          <div style="height:12px"></div>
+          <div class="callout"><strong>為什麼截斷到 index 43：</strong>各 run 的 presentation 數為 43–49，而數量本身就是表現的函數（完成得快 ⇒ 60 秒內出現更多目標）。若保留尾端 trial，較快的條件會貢獻較多晚期（也較疲勞）的 trial，配對母體就被表現本身污染。截到共同前綴讓三個條件面對<b>逐位相同</b>的刺激序列。速率型指標不受此限，因為它要的正是完整 run 的產出。</div>
+        </article>
+
+        <h3 style="margin-top:18px">Reason code 與留痕要求</h3>
+        <p class="section-intro">每一筆排除都是資料，不是刪除動作。<code>per-trial.csv</code> 必須帶 <code>excluded</code>（bool）、<code>exclusionReason</code>（下列代碼）與 <code>flags</code>（多值）三欄，排除的列仍然寫進檔案。</p>
+        <div class="formula">
+          Run level &nbsp;&nbsp;EXCL_VALIDITY · EXCL_SUSPECT · EXCL_COHORT_MISMATCH · EXCL_DETECTION_DEAD · EXCL_TOO_FEW_TRIALS<br>
+          Trim &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TRIM_COUNTDOWN · TRIM_TAIL_IDLE<br>
+          Trial level &nbsp;EXCL_REPOSITION · EXCL_TAIL_INDEX<br>
+          Flag only &nbsp;&nbsp;&nbsp;CENSOR_TIMEOUT · KEEP_NO_FIRE · FLAG_BASELINE_SHORT · FLAG_ADS_OVERLAP
+        </div>
+
+        <div style="height:16px"></div>
+        <h3>排除流程計數表（報告必印，放在所有結果之前）</h3>
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <thead><tr><th>步驟</th><th>GPW1 / 1-2-2</th><th>DK / 1-2-2</th><th>DK / 1-3-1</th></tr></thead>
+            <tbody>
+              <tr><td>匯入 run</td><td>3</td><td>3</td><td>3</td></tr>
+              <tr><td>通過 Level 1 硬閘</td><td class="yes">3</td><td class="yes">3</td><td class="yes">3</td></tr>
+              <tr><td>Level 2 修剪後 active duration</td><td>60.0 s ×3</td><td>60.0 s ×3</td><td>60.0 s ×3</td></tr>
+              <tr><td>周邊 presentation 總數</td><td>136</td><td>145</td><td>136</td></tr>
+              <tr><td>截斷至 index ≤ 43</td><td>129</td><td>129</td><td>129</td></tr>
+              <tr><td>通過 Level 3 排除</td><td>待跑</td><td>待跑</td><td>待跑</td></tr>
+              <tr><td>進入配對分析的 n</td><td>待跑</td><td>待跑</td><td>待跑</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="callout stop"><strong>差別排除的停止規則（事前登錄）：</strong>若任一條件通過 Level 3 的 trial 少於該條件截斷後母體的 <b>70%</b>，或三個條件的排除率彼此相差超過 <b>10 個百分點</b> → <b>停止對比，先出清理報告</b>。理由：差別流失（differential attrition）會直接偽造 Δ——被排除得多的條件，剩下的是它最好的 trial。這兩個數字是事前約定的慣例值，不是校準過的門檻，若要調整必須在跑數字之前改、並留在 diff 裡。</div>
+      </section>
+
+      <section id="pipeline">
+        <span class="section-no">05 / PIPELINE</span>
+        <h2>五階段流程</h2>
+        <p class="section-intro">每一階段都有明確的輸入、輸出與<b>拒答條件</b>。拒答是設計的一部分——寧可回「這批資料答不了」，也不印一張看起來有斜率的表。</p>
+
+        <div class="flow" aria-label="分析流程五階段">
+          <div class="flow-step"><span class="time">S0</span><strong>品質閘與清理</strong><small>硬閘、修剪、trial 級處置（§04）。決定哪些 run / trial 進得來。</small></div>
+          <div class="flow-step"><span class="time">S1</span><strong>逐 trial 抽取</strong><small>TS runner 讀匯出 JSON，吐 per-trial long CSV。</small></div>
+          <div class="flow-step"><span class="time">S2</span><strong>指標層</strong><small>三層指標，全部建在既有 canonical 構念上。</small></div>
+          <div class="flow-step"><span class="time">S3</span><strong>配對統計</strong><small>Python 讀 CSV，index 配對 + bootstrap + 漂移診斷。</small></div>
+          <div class="flow-step"><span class="time">S4</span><strong>報告</strong><small>互動 HTML + per-trial CSV，兩對比並列。</small></div>
+        </div>
+
+        <div style="height:16px"></div>
+
+        <article class="stage">
+          <span class="stage-label">S0 · Quality gate</span>
+          <h3>先決定能不能解讀，再談差異</h3>
+          <ul>
+            <li>逐 run 驗 <code>validity</code> 五旗、<code>suspect</code>、<code>lateEventCount</code>、<code>bufferOverflow</code>、<code>recorderOverflow</code>、pointer-lock 中斷。</li>
+            <li><b>偵測健康度</b>：檢查每 run 的 aim 更新是否足以支撐 detection（KI-031 的靜默失效模式：低 aim update rate 讓 detected 全滅而 CI 仍全綠）。</li>
+            <li><b>逐 trial 驗 pre-stimulus baseline coverage</b>（KI-034）。覆蓋不足的 trial 標記，不補值。</li>
+            <li>執行 <a href="#cleaning">§04</a> 的三級清理：Level 1 硬閘、Level 2 修剪（倒數期與尾端空轉）、Level 3 trial 級處置，並產出排除流程計數表。</li>
+            <li>疑似 repositioning 標註走 <code>deriveRepositioningSuspicion()</code>；門檻跨硬體未重校準，須先驗標註率在條件間是否平衡（見 §04 Level 3）。</li>
+          </ul>
+          <div class="io">
+            <div><span>Input</span>9 份 <code>spider-shot-wide-v1</code> 匯出 JSON</div>
+            <div><span>Output</span>可分析 run / trial 集合 + 逐 run 品質表 + 排除流程計數表</div>
+          </div>
+          <div class="refuse"><strong>拒答條件：</strong>任一 run 的 validity 旗為紅 → 該 run 出局並重報各 cell 的 n；任一條件剩餘可分析 run &lt; 2 → 該條件<b>不進對比</b>（無法估同條件離散度，就沒有雜訊尺度可比）；觸發 §04 的差別排除停止規則 → 先出清理報告，不進對比。</div>
+        </article>
+
+        <article class="stage">
+          <span class="stage-label">S1 · Per-trial extraction (TypeScript)</span>
+          <h3>一列 = 一次周邊 presentation</h3>
+          <ul>
+            <li><code>scripts/spiderWideCohortRunner.ts</code>：純函式，不讀時鐘、不讀隨機、無 I/O（比照 <code>spiderWideRepositioningRunner.ts</code> 的分工）。</li>
+            <li><code>scripts/analyze-spider-wide-cohort.ts</code>：唯一的 I/O 層，掃資料夾、解析條件標籤、寫 CSV。</li>
+            <li>條件標籤由路徑推導：<code>&lt;participant&gt;/&lt;mouse&gt;[/&lt;grip&gt;]</code>；<code>GPW1</code> 無 grip 子層 → 由 manifest 明確補為 <code>1-2-2</code>，<b>不得由程式猜</b>。</li>
+            <li>欄位（long format，為多受試者預留）：<code>participant, mouse, grip, drillId, rep, runStartedAt, presentationIndex, side, D_deg, W_deg, outcomeClass</code> + 各指標一欄 + <code>excluded, exclusionReason, flags</code> 三欄。</li>
+            <li><b>被排除的 trial 仍然寫進 CSV</b>，只是 <code>excluded=true</code> 並帶 reason code（見 <a href="#cleaning">§04</a>）。抽取層不做刪除，清理決策全部是可查詢的資料。</li>
+          </ul>
+          <div class="io">
+            <div><span>Input</span>S0 通過的匯出 + 條件 manifest</div>
+            <div><span>Output</span><code>per-trial.csv</code>（≈ 417 列 / 本批）</div>
+          </div>
+          <div class="refuse"><strong>拒答條件：</strong><code>drillId ≠ spider-shot-wide-v1</code> → 整份跳過（其他 drill 沒有 <code>zone: 'peripheral'</code>，母體為空）；必要 meta 欄位缺失 → 該指標寫 <code>null</code> 並記原因，<b>不以 0 補值</b>。</div>
+        </article>
+
+        <article class="stage">
+          <span class="stage-label">S2 · Metric layer</span>
+          <h3>沿用既有構念，不開第二套定義</h3>
+          <ul>
+            <li>事件窗走 <code>buildPeekWindows()</code>、on-target 走 <code>deriveTrackingSamples()</code> 的 ray/sphere hitbox 交會、角速度走 <code>omegaDegPerSec()</code> 的 tick-integral、命中/首發走 <code>deriveSpiderShotMetrics()</code>。</li>
+            <li>coaching doc 的四個鏡頭（煞停保留率、擊發邊際、邊緣後延遲、補槍成本）在 repo 內<b>尚無 committed 實作</b>，需新寫；但只能由上述 primitives 組合而成，任何新閾值或新尺寸常數都是違規（C-D4）。</li>
+            <li>六類 outcome atlas 分類規則沿用 coaching doc §05，保留重疊（搶拍與穿越邊緣可同時成立）。</li>
+          </ul>
+          <div class="io">
+            <div><span>Input</span><code>per-trial.csv</code> 骨架 + canonical derivations</div>
+            <div><span>Output</span>補齊指標欄的 <code>per-trial.csv</code></div>
+          </div>
+          <div class="refuse"><strong>拒答條件：</strong>若 baseline coverage 不足的 trial 比例過高，<code>reaction_ms</code> <b>整組剔出主結論</b>，降級為僅供對照的描述性欄位——已與需求方確認接受此處置。</div>
+        </article>
+
+        <article class="stage">
+          <span class="stage-label">S3 · Paired statistics (Python · research/)</span>
+          <h3>按 presentation index 配對</h3>
+          <ul>
+            <li>取 43 個共同前綴 index；每條件在該 index 上有 ≤3 個 rep 觀測，先在 rep 內保留原始 trial（不先平均），配對單位為 <code>(index, rep)</code>。</li>
+            <li>Δ 估計：Hodges–Lehmann 位移 + bootstrap 95% CI（重抽單位 = presentation index，保留 rep 結構）。比率型指標用 paired proportion。</li>
+            <li>分層檢查：side（L/R）分開再看一次；D 只驗是否在條件間平衡，不做斜率。</li>
+            <li>漂移診斷（§03）與每個 Δ 一起輸出，缺一不可。</li>
+            <li><code>research/</code> 只讀 CSV，不 import 任何 TS 模組（C-D1）；繪圖與 I/O 落在 notebook，不進 <code>algorithms/</code>（C-D2）。</li>
+          </ul>
+          <div class="io">
+            <div><span>Input</span><code>per-trial.csv</code></div>
+            <div><span>Output</span>逐指標 Δ + CI + 漂移診斷 + 同條件離散度</div>
+          </div>
+          <div class="refuse"><strong>拒答條件：</strong>跨條件 Δ 未超過同條件 3 個 run 之間的離散度 → 只報「未超過測量波動」，不報方向、不下判語。</div>
+        </article>
+
+        <article class="stage">
+          <span class="stage-label">S4 · Report</span>
+          <h3>互動 HTML + per-trial CSV</h3>
+          <ul>
+            <li>沿用 coaching doc 的視覺語言：outcome atlas、trial microscope、教練鏡頭散佈圖；條件用顏色區分（GPW1 / DK-122 / DK-131）。</li>
+            <li>新增：配對 delta 圖（43 個 index 的逐點 Δ 與 CI）、run 時間軸與漂移診斷、非預期右鍵觸發的獨立面板。</li>
+            <li>版面順序固定：<b>資料品質 → 排除流程計數表 → 有效 n → 兩個對比並列 → 機制拆解 → 行為標註</b>。品質與排除永遠在結果前面。</li>
+          </ul>
+          <div class="io">
+            <div><span>Input</span>S3 輸出 + <code>per-trial.csv</code></div>
+            <div><span>Output</span>結果 HTML + CSV，落在同一資料夾</div>
+          </div>
+        </article>
+      </section>
+
+      <section id="metrics">
+        <span class="section-no">06 / METRICS</span>
+        <h2>指標層</h2>
+        <p class="section-intro">沿用 proposal doc 的分層，依本批資料實況做了兩處刪改：移除角距劑量反應（無劑量範圍）、移除 polling / sensor 共變量（不可量測）。</p>
+
+        <article class="tier">
+          <span class="tier-label">Layer A · 主結果（不做總分）</span>
+          <div class="metric-line">
+            <div class="metric-name"><strong>周邊首發命中率</strong><code>first_shot_hit_rate</code><br><span class="tag">canonical</span></div>
+            <div class="metric-definition">首發命中的周邊 presentation ÷ 全部周邊 presentation。timeout 與未開火留在分母。</div>
+            <div class="metric-output">% · paired Δpp</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>乾淨 trial 命中時間</strong><code>peripheral_hit_time</code><br><span class="tag">canonical</span></div>
+            <div class="metric-definition"><code>t_hit − t_visible</code>，報 median 與 p90。timeout 不刪除，另以 timeout rate 表達。</div>
+            <div class="metric-output">ms · paired Δms</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>周邊有效命中速度</strong><code>peripheral_hits_per_min</code><br><span class="tag">canonical</span></div>
+            <div class="metric-definition">有效周邊命中數 ÷ 有效 active duration。必須與首發率並列，否則亂射也會變快。</div>
+            <div class="metric-output">hits/min</div>
+          </div>
+        </article>
+
+        <article class="tier">
+          <span class="tier-label">Layer B · 機制拆解</span>
+          <div class="metric-line">
+            <div class="metric-name"><strong>啟動反應</strong><code>reaction_ms</code><br><span class="tag risk">條件通過</span></div>
+            <div class="metric-definition"><code>t_onset − t_visible</code>。本批 aim 更新健康（80–85% tick 有位移，KI-031 風險低），但仍須逐 trial 驗 KI-034 baseline coverage；不足即剔出主結論。</div>
+            <div class="metric-output">median / p90 ms</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>運動執行</strong><code>movement_time_ms</code><br><span class="tag">canonical</span></div>
+            <div class="metric-definition"><code>t_on_target − t_onset</code>：大幅度 transport + braking 的總和。</div>
+            <div class="metric-output">median / p90 ms</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>速度放大</strong><code>peak_omega</code><br><span class="tag">canonical</span></div>
+            <div class="metric-definition">trial 窗內最大絕對角速度。因 D 幾乎固定，本批可直接跨條件比，不需 scaling curve。</div>
+            <div class="metric-output">deg/s</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>煞停保留率</strong><code>entry_omega / peak_omega</code><br><span class="tag new">需新實作</span></div>
+            <div class="metric-definition">進靶瞬間仍保留多少峰速。越低代表進靶前卸速越完整。裝置重量／形狀假設最直接對應這一項。</div>
+            <div class="metric-output">0–1 比值</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>擊發邊際</strong><code>first_fire − first_on_target</code><br><span class="tag new">需新實作</span></div>
+            <div class="metric-definition">負值為搶拍，正值為確認／停留時間。握法假設最直接對應這一項。</div>
+            <div class="metric-output">ms（可正可負）</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>停止控制</strong><code>overshoot / drop / micro-adjust</code><br><span class="tag">canonical</span></div>
+            <div class="metric-definition">首次進靶後最大逸出角、掉靶次數與重新進靶次數。區分「甩不到」與「煞不住」。</div>
+            <div class="metric-output">deg / count</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>補槍成本</strong><code>corrective_hit − first_miss</code><br><span class="tag new">需新實作</span></div>
+            <div class="metric-definition">把最終命中拆成第一槍品質與修正代價。</div>
+            <div class="metric-output">ms</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>結果分類分布</strong><code>outcome_class</code><br><span class="tag">coaching doc §05</span></div>
+            <div class="metric-definition">六類（首發命中／補槍／未開火／穿越邊緣／搶拍空放／timeout），保留重疊。比單一 miss rate 更能指出失手型態的轉移。</div>
+            <div class="metric-output">分布 · Δ 佔比</div>
+          </div>
+        </article>
+
+        <article class="tier">
+          <span class="tier-label">Layer C · 共變量與行為標註（禁止進入任何評分）</span>
+          <div class="metric-line">
+            <div class="metric-name"><strong>非預期右鍵觸發</strong><code>ads_down_count</code><br><span class="tag quality">行為標註</span></div>
+            <div class="metric-definition">本批 <code>usp_s_laser</code> 無 <code>ads</code> 區塊，右鍵 inert，<b>不影響任何瞄準量測</b>，因此這是一條乾淨的行為訊號：1-3-1 為 34 / 28 / 17（跨 rep 遞減），1-2-2 為 1 / 0 / 0，GPW1 為 0。報告中只以「非預期右鍵觸發次數」呈現，不稱缺陷。</div>
+            <div class="metric-output">count / run</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>疑似 repositioning</strong><code>repositioning_suspected</code><br><span class="tag quality">品質標註</span></div>
+            <div class="metric-definition">門檻 150 ms / 2 deg/s 僅在同硬體研究內適用；本批跨兩隻滑鼠，需明確標註為未重校準。用於排除 / 分層，不可計數為「抬鼠次數」。</div>
+            <div class="metric-output">flag</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>角距與側別平衡</strong><code>D_deg / side</code><br><span class="tag quality">平衡檢查</span></div>
+            <div class="metric-definition">D 實測 47.7–51.9°、L/R 為 23/22。因同 seed，三條件在這兩項上<b>結構性相同</b>，只需驗證而非建模。</div>
+            <div class="metric-output">驗證通過 / 失敗</div>
+          </div>
+        </article>
+      </section>
+
+      <section id="stats">
+        <span class="section-no">07 / STATISTICS</span>
+        <h2>統計與判準（事前固定）</h2>
+        <div class="formula">
+          配對單位：(presentation_index, rep) &nbsp;·&nbsp; index ∈ 共同前綴 1..43<br>
+          Δ 估計：Hodges–Lehmann 位移 + bootstrap 95% CI（重抽單位 = presentation index）<br>
+          比率指標：paired proportion + bootstrap CI<br>
+          <br>
+          雜訊尺度（MDC proxy）= 同條件 3 個 run 之間該指標的離散度<br>
+          判定：|Δ| &gt; 雜訊尺度 且 CI 不跨 0 且 |Δ| &gt; drift_expected &nbsp;⇒&nbsp; 可描述為方向性差異<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;否則 &nbsp;⇒&nbsp; 「未超過測量波動」，不報方向
+        </div>
+        <div style="height:12px"></div>
+        <div class="callout"><strong>為什麼是 bootstrap 而不是 mixed-effects：</strong>n=1 時隨機效果結構太薄，模型給的精確度是假的。改用無模型假設的配對 bootstrap。<code>per-trial.csv</code> 的 long format 已預留 <code>participant</code> 欄，等受試者累積後直接換成 mixed-effects（condition 為固定效果，participant 與 presentation index 為隨機截距），不需重跑抽取層。</div>
+        <div style="height:12px"></div>
+        <div class="callout stop"><strong>報告順序不可調換：</strong>先印資料品質與有效 n，再印漂移診斷，最後才印 Δ 與 CI。任何 Δ 若脫離這兩項單獨呈現（例如被摘出來放進簡報），即屬誤用。</div>
+      </section>
+
+      <section id="deliver">
+        <span class="section-no">08 / DELIVERABLES</span>
+        <h2>交付物與檔案落點</h2>
+        <div class="files">
+          <ul>
+            <li><b>本文件</b>：<code>docs/algorithm/spider_shot/spider-shot-wide/mouse-grip-comparison-workflow-2026-09-17.html</code></li>
+            <li><b>抽取層（純函式）</b>：<code>scripts/spiderWideCohortRunner.ts</code></li>
+            <li><b>抽取層（I/O）</b>：<code>scripts/analyze-spider-wide-cohort.ts</code></li>
+            <li><b>逐 trial 資料</b>：<code>docs/algorithm/spider_shot/spider-shot-wide/per-trial.csv</code>（long format，可累積多受試者）</li>
+            <li><b>統計層</b>：<code>research/notebooks/</code> 讀上述 CSV（C-D1 單向隔離）</li>
+            <li><b>結果報告</b>：<code>docs/algorithm/spider_shot/spider-shot-wide/</code> 下的互動 HTML</li>
+          </ul>
+        </div>
+        <div style="height:12px"></div>
+        <div class="callout"><strong>驗證注意：</strong><code>npm run typecheck</code> 只掃 <code>src/</code> 與 <code>server/</code>，<b>不掃 <code>scripts/</code></b>。本 pipeline 的兩個 runner 落在 <code>scripts/</code>，必須另外跑一次涵蓋它們的型別檢查，否則型別錯誤會在六次綠燈之下靜靜存活。</div>
+      </section>
+
+      <section id="limits">
+        <span class="section-no">09 / LIMITS</span>
+        <h2>這份分析不會說什麼</h2>
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <thead><tr><th>不會出現的語句</th><th>原因</th><th>可以出現的替代說法</th></tr></thead>
+            <tbody>
+              <tr><td class="no">「DK 比 GPW1 好 / 差」</td><td>n=1、順序未 counterbalance，滑鼠效應與 68 分鐘時間效應共線</td><td>「在這一位受試者、這個順序下，指標 X 相差 Δ（CI …），漂移外推為 …」</td></tr>
+              <tr><td class="no">任何分數、等級、percentile、常模</td><td>常模需跨技能層 100+ 人；<code>spider-shot-wide-v1</code> 仍是 practice-only</td><td>原始指標值與其配對差</td></tr>
+              <tr><td class="no">「1-3-1 握法誤觸右鍵是缺陷」</td><td>未區分裝置形狀、個人手型與熟悉度；且跨 rep 遞減（34→28→17）</td><td>「1-3-1 條件下記錄到非預期右鍵觸發，並在三個 run 內遞減」</td></tr>
+              <tr><td class="no">關於 polling rate / sensor 表現的任何推論</td><td>匯出無 <code>mouseSamples</code>，該維度不可量測</td><td>不提</td></tr>
+              <tr><td class="no">「角距越大越慢」之類的劑量結論</td><td>本批 D 僅 47.7–51.9°，無劑量範圍</td><td>不提；D 只作平衡驗證</td></tr>
+              <tr><td class="partial">reaction_ms 的跨條件比較</td><td>視 KI-034 baseline coverage 逐 trial 檢查結果而定</td><td>通過才報；未通過則僅列為描述性欄位並註明</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="sources">
+        <span class="section-no">10 / SOURCES</span>
+        <h2>本流程依據</h2>
+        <div class="sources">
+          <ul>
+            <li><a href="../spider-shot-wide-v1-performance-metrics-proposal-2026-09-09.html">Spider Shot Wide v1 表現指標與結果視覺化提案</a>：四層指標體系、聚合與排除規則、真人驗證階段。</li>
+            <li><a href="../spider-shot-wide-v1-angular-speed-coaching-2026-09-10.html">Spider Shot Wide v1 · raw tick-integral angular speed</a>：六類 outcome atlas 分類規則與四個教練鏡頭的定義。</li>
+            <li><a href="../../../operational/analysis-spider-shot.md">Spider Shot 離線分析契約</a>：canonical 構念、wide side、mouse throw、repositioning 語意。</li>
+            <li><a href="../../../known_issue/">known issue 帳本</a>：KI-031（低 aim update rate 的 detection 靜默失效）、KI-034（pre-stimulus baseline 污染）。</li>
+            <li>資料來源：<code>data/BQC-test/DKMouse/S01/</code>（另有一份逐位相同的副本於 <code>data/BQC-test/2026_09_DK Mouse/3.收案资料/</code>）。</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <div class="shell">Spider Shot Wide v1 · 雙滑鼠 × 握法比較分析 workflow · 2026-09-17 · 流程設計文件，不含結果。</div>
+  </footer>
+</body>
+</html>
