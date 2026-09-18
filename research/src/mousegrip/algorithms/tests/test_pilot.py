@@ -145,20 +145,16 @@ def _run(run_id: str, condition: str, **overrides) -> object:
     return RunExtract(**{**defaults, **overrides})
 
 
-def test_a_settings_change_spoils_the_contrast_that_spans_it_not_the_runs() -> None:
-    """A participant who played one condition at a different sensitivity has two confounded
-    factors, not one deviant block: the contrast crossing the change is unusable while every
-    other contrast of theirs -- and every run -- stays intact."""
+def test_sensitivity_change_is_player_adaptation_not_a_comparability_blocker() -> None:
+    """Sensitivity remains auditable on each run but never withholds a player contrast."""
     from mousegrip.algorithms.pilot import contrast_comparability
 
     a = [_run("a1", "A", sensitivity=1.1), _run("a2", "A", sensitivity=1.1)]
     b = [_run("b1", "B", sensitivity=1.0), _run("b2", "B", sensitivity=1.0)]
-    c = [_run("c1", "C", sensitivity=1.0), _run("c2", "C", sensitivity=1.0)]
+    mixed = [_run("c1", "C", sensitivity=1.0), _run("c2", "C", sensitivity=1.1)]
 
-    spoiled = contrast_comparability(a, b)
-    assert spoiled and "sensitivity" in spoiled[0]
-    # The contrast that never crosses the change is untouched.
-    assert contrast_comparability(b, c) == ()
+    assert contrast_comparability(a, b) == ()
+    assert contrast_comparability(a, mixed) == ()
 
 
 def test_a_setting_that_moves_inside_one_condition_spoils_its_contrasts_too() -> None:

@@ -404,10 +404,11 @@ def extract_run(
 
 
 #: Settings that must hold still across one participant's runs for their conditions to be
-#: comparable. A change here is not a technical failure -- every validity flag can stay green --
-#: but it makes the affected run a different experiment, so pooling it silently would attribute
-#: a settings change to the device or the grip.
-COMPARABILITY_KEYS = ("sensitivity", "dpi", "fov_deg", "seed", "display_css", "fullscreen")
+#: comparable. Sensitivity is deliberately absent: in this study it is a player-controlled
+#: adaptation to the active mouse/grip configuration, so changing it is part of the observed
+#: configuration rather than a reason to block a contrast. It remains recorded on every run for
+#: audit and interpretation. Geometry, stimulus and display settings still define comparability.
+COMPARABILITY_KEYS = ("dpi", "fov_deg", "seed", "display_css", "fullscreen")
 
 
 def settings_spread(runs: Sequence[RunExtract]) -> dict[str, tuple[Any, ...]]:
@@ -428,11 +429,10 @@ def contrast_comparability(
 ) -> tuple[str, ...]:
     """Reasons two conditions cannot be compared as a device or grip contrast.
 
-    The unit is the **contrast**, not the run, because a settings change inside one session has
-    no "drifted side": if a participant played one condition at sensitivity 1.1 and the other at
-    1.0, neither block is the deviant one -- the two factors are simply confounded, and only the
-    contrasts spanning the change are spoiled. Flagging runs against a modal value instead would
-    pick an arbitrary reference and discard perfectly good measurements from the majority side.
+    The unit is the **contrast**, not the run. Geometry, stimulus or display changes have no
+    "drifted side": the affected contrast is a different experiment. Sensitivity is not checked
+    here because the study contract treats it as player adaptation to each configuration; it is
+    retained as descriptive provenance instead of being promoted to an exclusion factor.
     """
     reasons: list[str] = []
     for key in COMPARABILITY_KEYS:
