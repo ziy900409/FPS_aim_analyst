@@ -103,6 +103,8 @@ primitive 層   新增 buildTargetWindows()（per-target 窗界，population-awa
 
 > ⚠️ **再順延（2026-09-15，WP-70 T0 重查）**：`WP-69` 與 `WP-70` **均已被採納**並入 [`exec-plan/README.md`](../../README.md) §2 索引 —— [`active/stage15/wp-69-pause-invalid-restart/`](../stage15/wp-69-pause-invalid-restart/README.md)（pause/invalid/restart，已交付）與 [`active/stage16/wp-70-run-scoped-condition-validity/`](../stage16/wp-70-run-scoped-condition-validity/README.md)（條件失效的效力單位改為 run）。依 [GD-15](../../DECISIONS.md)「先採納先得」，**本 stage 尚未採納的三個候選再順延為 `WP-71`／`WP-72`／`WP-73`**。下表的 WP 欄位仍未改寫（本註記即權威）；採納當下須依 [GD-35](../../DECISIONS.md) ② 再重查一次，不得直接沿用本註記的數字。重查證據：`exec-plan/README.md` §2 目前最大採納號 = **WP-70**、`DECISIONS.md` 已落帳最大 = **GD-46**。
 
+> ⚠️ **再順延（2026-09-18，WP-71 規劃採納）**：`WP-71` 已由 [`active/stage16/wp-71-spider-wide-opening-target-cue/`](../stage16/wp-71-spider-wide-opening-target-cue/README.md) 採納並列入 [`exec-plan/README.md`](../../README.md) §2 索引。依 [GD-15](../../DECISIONS.md)「先採納先得」，**本 stage 尚未採納的三個候選再順延為 `WP-72`／`WP-73`／`WP-74`**。下表的 WP 欄位仍未改寫（本註記即權威）；採納當下仍須依 [GD-35](../../DECISIONS.md) ② 重查，不得直接沿用本註記的數字。
+
 | WP（候選） | 一句話 | 相依 | 估時（d） | 狀態 |
 |---|---|---|---|---|
 | **WP-66** | `spider-shot-v3` 量測參數定案:把已實作的五類構念與五個 registry 指標寫成規格權威,並處理 KI-031 造成的兩類構念空洞 | **KI-031**（見 §4） | 3–5 | 🟡 規劃中。參數文件已交付:[`spider-shot-v3-measurement-parameters-2026-09-09.html`](../../../algorithm/spider_shot/spider-shot-v3-measurement-parameters-2026-09-09.html) |

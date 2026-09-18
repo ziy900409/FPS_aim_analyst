@@ -23,6 +23,20 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-48 🟡 WP-71 `spider-shot-wide-v1` 開場提示是 render-only cue，不是提早生成的正式目標（2026-09-18，規劃）
+
+| | |
+|---|---|
+| **來源與落點** | 使用者要求評估「任務開始前先顯現目標物」，並指示依 engineering-planning 方法將執行計畫寫入 stage16。執行計畫見 [WP-71](active/stage16/wp-71-spider-wide-opening-target-cue/README.md)。主題屬 drill 開場呈現，與 stage16 原主線 WP-70 無程式相依；寄放位置依使用者明確指示，偏離明帳保留。 |
+| **① 核心邊界** | 採用 **render-only opening target cue**，不得把正式 target 提前 `spawn`。cue 不建立 `TargetState`、不進入 `SharedState.targets`、不設定 `visible/alive`，因此不產生 `t_visible`、spawn/kill/timeout 事件，不接受 hit、不消耗 RNG、不進 replay。這避免 countdown 期間既有 `SimLoop` fire 排程誤傷目標，也不污染反應時間構念。 |
+| **② 顯示窗** | 只在「**初次** DrillPhase `countdown` + active attempt」顯示；`armed`、pause 後 resume countdown、`running`、`ended` 全部隱藏。進入 `running` 必須同一 render update 原子切換：cue 消失、正式第一顆目標出現，不得重疊或空窗。 |
+| **③ 幾何單一來源** | cue 的 pose 必須由 `spiderWideEyePos(0, 0, distanceU)` 取得，尺寸由 `resolveTargetHitbox()` 取得；不得在 view 另抄角度、距離或半徑公式。正式第一顆仍由既有 deterministic wide spawn 產生，兩者幾何須有測試證明一致。 |
+| **④ opt-in 與資料自述** | 只讓 `spider-shot-wide-v1` 設定 `targets.openingCue = 'countdown-anchor-v1'`；其他 drill 缺席即無行為改變。export 增加 `meta.targets.openingCue`，schema 採 **optional-in；opt-in run required-out；非 opt-in run absent-out**，讓後續分析可分池且不移動既有 fixture。此欄位描述刺激呈現，與 WP-67 的 `meta.opening`（arming/countdown 協定）正交；兩案平行時必須合併保留，不能互蓋 schema、builder 或 digest 變更。 |
+| **⑤ 術語** | 統一稱 **opening target cue／開場定位提示**。不得使用 `preAimCue` 等名稱，避免與既有 hold-click `preAim` 量測構念混淆。 |
+| **⑥ 視覺預設與待決** | 若 T0 owner 未另行拍板，採無動畫、低顯著度的 neutral wireframe/outline，約 40% opacity，完整初次 countdown 顯示到 running 原子切換。顏色不得是唯一辨識方式，且不得增加 webfont、持續 animation 或 per-frame layout allocation。OQ-71.1／71.2 在 T0 關閉。 |
+| **⑦ 編號** | 規劃期重查正式索引最大為 WP-70、本檔最大為 GD-47，故採 **WP-71 / GD-48**；WP-71 T0 仍須重查平行工作。stage14 三個未採納候選依 GD-15 再順延為 **WP-72／WP-73／WP-74**。 |
+| **狀態** | 🟡 **已規劃、未實作**。T0–T5 + T-exit 尚未執行；目前不代表 cue 已在產品中顯示，也不代表 `meta.targets.openingCue` 已存在於 payload。 |
+
 ### GD-47 ✅ WP-70 條件失效的效力單位是 **run** — fullscreen 與 Pointer Lock 語意對稱，並補上不重啟 plan 的恢復入口（2026-09-15, T6）
 
 | | |
