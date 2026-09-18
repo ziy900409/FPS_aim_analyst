@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Spider Shot Wide v1 三種滑鼠與握法組合的玩家內、隨機順序、多受試者分析 workflow。">
+  <title>Spider Shot Wide v1｜滑鼠 × 握法最佳組合分析 Workflow</title>
+  <style>
+    :root {
+      --bg-0: #0f1113;
+      --bg-1: #16191d;
+      --bg-2: #1e2227;
+      --bg-3: #242a30;
+      --line: rgba(255, 255, 255, 0.08);
+      --line-strong: rgba(255, 255, 255, 0.14);
+      --text-hi: #edeff2;
+      --text-mid: #aeb4bc;
+      --text-lo: #737b85;
+      --accent: #e8285a;
+      --accent-hi: #ff3d6e;
+      --accent-dim: rgba(232, 40, 90, 0.14);
+      --ok: #2ecc71;
+      --ok-dim: rgba(46, 204, 113, 0.12);
+      --warn: #f5a623;
+      --warn-dim: rgba(245, 166, 35, 0.12);
+      --bad: #ff5470;
+      --bad-dim: rgba(255, 84, 112, 0.12);
+      --cat-gpw: #3fa9f5;
+      --cat-dk122: #e83a6a;
+      --cat-dk131: #f5a623;
+      --violet: #9b6dff;
+      --font-ui: Inter, "Noto Sans TC", "Microsoft JhengHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-mono: "IBM Plex Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+      --fs-display: clamp(2.2rem, 5vw, 4.7rem);
+      --fs-h1: clamp(1.35rem, 2vw, 1.8rem);
+      --fs-h2: 1rem;
+      --fs-body: 0.91rem;
+      --fs-data: 0.96rem;
+      --fs-label: 0.69rem;
+      --sp-1: 4px;
+      --sp-2: 8px;
+      --sp-3: 12px;
+      --sp-4: 16px;
+      --sp-5: 20px;
+      --sp-6: 24px;
+      --sp-8: 32px;
+      --sp-10: 40px;
+      --r-card: 12px;
+      --r-control: 8px;
+      --r-pill: 999px;
+      --ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+      --dur-fast: 120ms;
+      --dur-reveal: 200ms;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg-0);
+      color: var(--text-hi);
+      font: 400 var(--fs-body)/1.65 var(--font-ui);
+    }
+    a { color: #74c4ff; text-underline-offset: 3px; }
+    a:hover { color: #a7d9ff; }
+    a:focus-visible, summary:focus-visible {
+      outline: 2px solid var(--accent-hi);
+      outline-offset: 4px;
+      border-radius: 4px;
+    }
+    code, .mono, .metric-value {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+    code {
+      color: #d8dce2;
+      background: rgba(255,255,255,.055);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: .08em .35em;
+      word-break: break-word;
+    }
+    .skip-link {
+      position: fixed;
+      left: 16px;
+      top: -80px;
+      z-index: 99;
+      padding: 10px 14px;
+      color: #fff;
+      background: var(--accent);
+      border-radius: var(--r-control);
+      transition: top var(--dur-fast) var(--ease);
+    }
+    .skip-link:focus { top: 16px; }
+
+    .layout {
+      width: min(1500px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 262px minmax(0, 1fr);
+    }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      align-self: start;
+      min-height: 100vh;
+      padding: var(--sp-8) var(--sp-6);
+      background: #121519;
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-8);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+    .brand-mark {
+      width: 13px;
+      height: 30px;
+      background: var(--accent);
+      border-radius: 2px;
+      box-shadow: 0 0 0 5px var(--accent-dim);
+    }
+    .status-pill, .pill {
+      width: fit-content;
+      border-radius: var(--r-pill);
+      padding: 5px 9px;
+      font: 700 .68rem/1 var(--font-ui);
+      letter-spacing: .055em;
+      text-transform: uppercase;
+    }
+    .status-pill { color: var(--ok); background: var(--ok-dim); border: 1px solid rgba(46,204,113,.28); }
+    .sidebar h2 {
+      margin: 0 0 8px;
+      font-size: .74rem;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--text-lo);
+    }
+    .sidebar p { margin: 0; color: var(--text-mid); font-size: .78rem; }
+    .nav-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+    .nav-list a {
+      display: grid;
+      grid-template-columns: 26px 1fr;
+      gap: 8px;
+      padding: 8px 9px;
+      color: var(--text-mid);
+      border-radius: var(--r-control);
+      text-decoration: none;
+      font-size: .8rem;
+    }
+    .nav-list a:hover { color: var(--text-hi); background: var(--bg-2); }
+    .nav-list span { color: var(--text-lo); font-family: var(--font-mono); }
+    .sidebar-foot { margin-top: auto; padding-top: var(--sp-4); border-top: 1px solid var(--line); }
+
+    main { min-width: 0; }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 520px;
+      padding: 76px clamp(24px, 6vw, 80px) 46px;
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(120deg, rgba(232,40,90,.11), transparent 36%),
+        radial-gradient(circle at 85% 26%, rgba(63,169,245,.11), transparent 28%),
+        var(--bg-0);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: .28;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(to bottom, #000, transparent 86%);
+    }
+    .hero-inner { position: relative; z-index: 1; max-width: 1060px; }
+    .eyebrow, .label {
+      font-size: var(--fs-label);
+      letter-spacing: .095em;
+      text-transform: uppercase;
+      color: var(--text-lo);
+      font-weight: 800;
+    }
+    .hero .eyebrow { color: #ff7798; }
+    h1 {
+      max-width: 980px;
+      margin: 12px 0 18px;
+      font-size: var(--fs-display);
+      line-height: .98;
+      letter-spacing: -.055em;
+      text-wrap: balance;
+    }
+    .hero-lede {
+      max-width: 810px;
+      margin: 0;
+      color: var(--text-mid);
+      font-size: clamp(1rem, 1.4vw, 1.14rem);
+    }
+    .hero-readouts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      max-width: 980px;
+      margin-top: 36px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--r-card);
+      background: var(--line);
+    }
+    .readout { min-height: 108px; padding: 17px 18px; background: rgba(22,25,29,.93); }
+    .readout .metric-value { display: block; margin-top: 8px; color: var(--text-hi); font-size: 1.22rem; font-weight: 800; }
+    .readout small { display: block; margin-top: 3px; color: var(--text-lo); line-height: 1.35; }
+    .trace {
+      position: absolute;
+      z-index: 1;
+      right: clamp(22px, 4vw, 64px);
+      top: 58px;
+      width: 260px;
+      height: 150px;
+      opacity: .7;
+    }
+    .trace path { fill: none; stroke: var(--accent); stroke-width: 3; vector-effect: non-scaling-stroke; }
+    .trace .baseline { stroke: var(--line-strong); stroke-width: 1; }
+    .trace circle { fill: var(--bg-0); stroke: var(--accent-hi); stroke-width: 3; }
+
+    .content { padding: 0 clamp(20px, 5vw, 72px) 90px; }
+    .section {
+      scroll-margin-top: 24px;
+      padding: 56px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .section:last-child { border-bottom: 0; }
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(220px, .8fr) minmax(320px, 1.2fr);
+      gap: 36px;
+      align-items: end;
+      margin-bottom: 26px;
+    }
+    .section-index { color: var(--accent); font: 800 .72rem/1 var(--font-mono); letter-spacing: .08em; }
+    h2 { margin: 8px 0 0; font-size: var(--fs-h1); line-height: 1.12; letter-spacing: -.025em; }
+    h3 { margin: 0; font-size: var(--fs-h2); line-height: 1.25; }
+    .section-head p { margin: 0; color: var(--text-mid); }
+    .grid { display: grid; gap: var(--sp-4); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .card {
+      min-width: 0;
+      padding: var(--sp-6);
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      border-radius: var(--r-card);
+    }
+    .card p:last-child, .card ul:last-child { margin-bottom: 0; }
+    .card-kicker { margin-bottom: 12px; }
+    .card p { color: var(--text-mid); }
+    .condition-card { position: relative; overflow: hidden; padding-top: 28px; }
+    .condition-card::before { content: ""; position: absolute; inset: 0 0 auto; height: 4px; background: var(--condition-color); }
+    .condition-id { color: var(--condition-color); font: 800 .72rem/1 var(--font-mono); }
+    .condition-name { display: block; margin-top: 10px; font-size: 1.08rem; font-weight: 800; }
+    .condition-factors { margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .factor { padding: 9px 10px; background: var(--bg-2); border-radius: 7px; }
+    .factor span { display: block; color: var(--text-lo); font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; }
+    .factor b { display: block; margin-top: 3px; font: 700 .82rem/1.3 var(--font-mono); }
+
+    .callout {
+      display: grid;
+      grid-template-columns: 4px 1fr;
+      gap: 16px;
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--r-card);
+      background: var(--bg-1);
+    }
+    .callout::before { content: ""; border-radius: 999px; background: var(--callout-color, var(--accent)); }
+    .callout strong { display: block; margin-bottom: 3px; }
+    .callout p { margin: 0; color: var(--text-mid); }
+    .callout.warn { --callout-color: var(--warn); background: var(--warn-dim); }
+    .callout.ok { --callout-color: var(--ok); background: var(--ok-dim); }
+
+    .workflow-overview {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 24px 14px;
+      counter-reset: workflow;
+    }
+    .workflow-overview li {
+      position: relative;
+      min-height: 148px;
+      padding: 18px;
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      border-radius: var(--r-card);
+      counter-increment: workflow;
+    }
+    .workflow-overview li::before {
+      content: "S" counter(workflow, decimal-leading-zero);
+      display: block;
+      margin-bottom: 16px;
+      color: var(--accent);
+      font: 800 .72rem/1 var(--font-mono);
+    }
+    .workflow-overview li:not(:nth-child(4n))::after {
+      content: "→";
+      position: absolute;
+      right: -21px;
+      top: 58px;
+      z-index: 2;
+      color: var(--text-lo);
+      font: 700 1rem/1 var(--font-mono);
+    }
+    .workflow-overview h3 { margin-bottom: 7px; }
+    .workflow-overview p { margin: 0; color: var(--text-mid); font-size: .8rem; line-height: 1.5; }
+
+    .phase-stack { display: grid; gap: 12px; }
+    details.phase {
+      overflow: hidden;
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      border-radius: var(--r-card);
+    }
+    details.phase[open] { border-color: var(--line-strong); }
+    details.phase summary {
+      cursor: pointer;
+      list-style: none;
+      display: grid;
+      grid-template-columns: 62px minmax(180px, .7fr) minmax(260px, 1.3fr) 24px;
+      gap: 14px;
+      align-items: center;
+      padding: 16px 18px;
+    }
+    details.phase summary::-webkit-details-marker { display: none; }
+    details.phase summary::after { content: "+"; color: var(--text-lo); font: 700 1rem/1 var(--font-mono); }
+    details.phase[open] summary::after { content: "−"; }
+    .phase-no { color: var(--accent); font: 800 .74rem/1 var(--font-mono); }
+    .phase-purpose { color: var(--text-mid); font-size: .79rem; }
+    .phase-body {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      border-top: 1px solid var(--line);
+      background: var(--line);
+    }
+    .phase-cell { padding: 17px 18px; background: var(--bg-2); }
+    .phase-cell p, .phase-cell ul { margin: 8px 0 0; color: var(--text-mid); font-size: .79rem; }
+    .phase-cell ul { padding-left: 18px; }
+    .phase-cell.gate { background: #241e17; }
+    .phase-cell.gate .label { color: var(--warn); }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-card); }
+    table { width: 100%; border-collapse: collapse; background: var(--bg-1); font-size: .8rem; }
+    th, td { padding: 12px 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--text-lo); background: var(--bg-2); font-size: .66rem; text-transform: uppercase; letter-spacing: .065em; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover td { background: rgba(255,255,255,.018); }
+    td.metric-value { color: var(--text-hi); }
+    .direction { white-space: nowrap; color: var(--text-mid); }
+    .direction.up::before { content: "↑ "; color: var(--ok); }
+    .direction.down::before { content: "↓ "; color: var(--ok); }
+    .direction.zero::before { content: "↔ "; color: var(--violet); }
+
+    .formula {
+      margin: 14px 0 0;
+      padding: 13px 14px;
+      overflow-x: auto;
+      color: #dce1e8;
+      background: #101317;
+      border: 1px solid var(--line);
+      border-radius: var(--r-control);
+      font: 600 .78rem/1.6 var(--font-mono);
+      white-space: nowrap;
+    }
+    .model-card { border-top: 3px solid var(--model-color, var(--accent)); }
+    .model-card ul { padding-left: 18px; color: var(--text-mid); }
+
+    .decision-lane { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .decision-step {
+      position: relative;
+      padding: 18px;
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      border-radius: var(--r-card);
+    }
+    .decision-step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -11px;
+      top: 50%;
+      z-index: 2;
+      transform: translate(50%, -50%);
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      color: var(--text-lo);
+      background: var(--bg-0);
+      border: 1px solid var(--line);
+      border-radius: 50%;
+    }
+    .decision-step b { display: block; margin: 8px 0 5px; }
+    .decision-step p { margin: 0; color: var(--text-mid); font-size: .8rem; }
+    .outcome-grid { margin-top: 16px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .outcome { padding: 14px; border-radius: var(--r-control); border: 1px solid var(--line); background: var(--bg-1); }
+    .outcome b { display: block; margin-bottom: 4px; }
+    .outcome span { color: var(--text-mid); font-size: .76rem; }
+    .outcome.best { border-color: rgba(46,204,113,.35); background: var(--ok-dim); }
+    .outcome.trade { border-color: rgba(245,166,35,.35); background: var(--warn-dim); }
+    .outcome.equiv { border-color: rgba(155,109,255,.35); background: rgba(155,109,255,.1); }
+    .outcome.uncertain { border-color: rgba(255,84,112,.35); background: var(--bad-dim); }
+
+    .artifact-list { display: grid; gap: 8px; }
+    .artifact {
+      display: grid;
+      grid-template-columns: 170px minmax(0, 1fr);
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .artifact:last-child { border-bottom: 0; }
+    .artifact .mono { color: var(--text-hi); font-size: .76rem; }
+    .artifact span:last-child { color: var(--text-mid); font-size: .8rem; }
+
+    .mermaid-source summary { cursor: pointer; color: var(--text-mid); font-weight: 700; }
+    .mermaid-source pre {
+      max-height: 420px;
+      overflow: auto;
+      margin: 14px 0 0;
+      padding: 16px;
+      color: #cdd3db;
+      background: #0c0e10;
+      border: 1px solid var(--line);
+      border-radius: var(--r-control);
+      font: 400 .74rem/1.55 var(--font-mono);
+      white-space: pre;
+    }
+    .mermaid-source code { padding: 0; background: none; border: 0; color: inherit; }
+    .footnotes { color: var(--text-mid); font-size: .78rem; }
+    .footnotes li { margin: 7px 0; }
+    .document-footer {
+      padding: 28px clamp(20px, 5vw, 72px) 44px;
+      color: var(--text-lo);
+      border-top: 1px solid var(--line);
+      font-size: .74rem;
+    }
+
+    @media (max-width: 1120px) {
+      .layout { grid-template-columns: 220px minmax(0, 1fr); }
+      .hero-readouts, .workflow-overview, .phase-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .workflow-overview li:not(:nth-child(4n))::after { display: none; }
+      .trace { opacity: .28; }
+      .decision-lane, .outcome-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .decision-step::after { display: none !important; }
+    }
+    @media (max-width: 800px) {
+      .layout { display: block; }
+      .sidebar { position: static; min-height: auto; padding: 18px 20px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .sidebar nav, .sidebar-foot { display: none; }
+      .sidebar > div:nth-of-type(2) { display: none; }
+      .hero { min-height: auto; padding-top: 54px; }
+      .trace { display: none; }
+      .section-head, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .section-head { gap: 14px; align-items: start; }
+      .phase summary { grid-template-columns: 52px 1fr 24px !important; }
+      .phase-purpose { display: none; }
+      .artifact { grid-template-columns: 1fr; gap: 4px; }
+    }
+    @media (max-width: 560px) {
+      .hero-readouts, .workflow-overview, .phase-body, .decision-lane, .outcome-grid { grid-template-columns: 1fr; }
+      .hero-readouts { gap: 1px; }
+      .condition-factors { grid-template-columns: 1fr; }
+      .section { padding: 42px 0; }
+      h1 { font-size: 2.45rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .001ms !important; transition-duration: .001ms !important; }
+    }
+    @media print {
+      :root { color-scheme: light; --bg-0: #fff; --bg-1: #fff; --bg-2: #f3f4f6; --bg-3: #e5e7eb; --text-hi: #111827; --text-mid: #374151; --text-lo: #6b7280; --line: rgba(0,0,0,.12); --line-strong: rgba(0,0,0,.22); }
+      .layout { display: block; max-width: none; }
+      .sidebar { display: none; }
+      .hero { min-height: auto; padding: 32px 36px; background: #fff; }
+      .trace { display: none; }
+      .content { padding: 0 36px; }
+      .section { padding: 30px 0; break-inside: avoid; }
+      .card, details.phase, .callout, .decision-step, .outcome { break-inside: avoid; }
+      details.phase:not([open]) .phase-body { display: grid; }
+      details.phase summary::after { display: none; }
+      .mermaid-source { display: none; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到主要內容</a>
+  <div class="layout">
+    <aside class="sidebar" aria-label="文件導覽">
+      <div>
+        <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span>AIM ANALYST</span></div>
+        <div class="status-pill" style="margin-top:18px">Analysis design</div>
+      </div>
+      <div>
+        <h2>研究任務</h2>
+        <p>在三個實際使用組合中，找出整體表現最佳者；保留速度—準度取捨，不製造未校準總分。</p>
+      </div>
+      <nav aria-label="章節">
+        <h2>Workflow map</h2>
+        <ol class="nav-list">
+          <li><a href="#decision"><span>00</span>決策問題</a></li>
+          <li><a href="#estimands"><span>01</span>條件與估計量</a></li>
+          <li><a href="#workflow"><span>02</span>八階段流程</a></li>
+          <li><a href="#metrics"><span>03</span>指標架構</a></li>
+          <li><a href="#models"><span>04</span>統計模型</a></li>
+          <li><a href="#ranking"><span>05</span>最佳組合判定</a></li>
+          <li><a href="#operations"><span>06</span>實驗執行</a></li>
+          <li><a href="#outputs"><span>07</span>交付與誠實邊界</a></li>
+        </ol>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="label">Version</div>
+        <p class="mono">2026-09-17 · v1</p>
+        <p style="margin-top:8px">自包含 HTML<br>不含分析結果</p>
+      </div>
+    </aside>
+
+    <main id="main-content">
+      <header class="hero">
+        <svg class="trace" viewBox="0 0 260 150" role="img" aria-label="三個條件通過品質與準度門檻後匯入最佳組合決策">
+          <path class="baseline" d="M2 126 H258"></path>
+          <path d="M2 116 C42 112 52 86 88 88 S132 38 162 66 S203 113 258 34"></path>
+          <circle cx="88" cy="88" r="5"></circle>
+          <circle cx="162" cy="66" r="5"></circle>
+          <circle cx="258" cy="34" r="5"></circle>
+        </svg>
+        <div class="hero-inner">
+          <div class="eyebrow">Spider Shot Wide v1 · mouse × grip</div>
+          <h1>哪個組合，讓玩家打得最好？</h1>
+          <p class="hero-lede">三條件、玩家內重複量測、隨機次序。先守住首發準度與資料品質，再比較有效命中速度、尾端命中時間與穩定性；沒有單一條件真正勝出時，系統必須誠實地回答「取捨」或「證據不足」。</p>
+          <div class="hero-readouts" aria-label="研究設計摘要">
+            <div class="readout"><span class="label">Conditions</span><span class="metric-value">03</span><small>GPW1/122 · DK/122 · DK/131</small></div>
+            <div class="readout"><span class="label">Design</span><span class="metric-value">Within-player</span><small>每位玩家完成全部條件</small></div>
+            <div class="readout"><span class="label">Order</span><span class="metric-value">Randomized</span><small>六種次序平衡配置</small></div>
+            <div class="readout"><span class="label">Decision</span><span class="metric-value">Guardrailed</span><small>準度門檻 → 效能排序</small></div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="section" id="decision">
+          <div class="section-head">
+            <div><div class="section-index">00 / DECISION</div><h2>研究問題與回答格式</h2></div>
+            <p>本研究要回答的是「玩家使用哪個滑鼠 × 握法組合，整體 Spider Shot Wide 表現最好」，不是把滑鼠形狀、感測器或握法機制分別做因果歸因。</p>
+          </div>
+          <div class="grid grid-2">
+            <article class="card">
+              <div class="card-kicker label">Primary question</div>
+              <h3>三條件直接競爭</h3>
+              <p>以 <strong>condition</strong> 作為三水準玩家內因子，估計每個組合的調整後表現與全部三組 pairwise contrasts。滑鼠效果與握法效果保留為解釋用對比，不取代整體排名。</p>
+              <div class="formula">condition ∈ { GPW1/1-2-2, DK/1-2-2, DK/1-3-1 }</div>
+            </article>
+            <article class="card">
+              <div class="card-kicker label">Allowed answers</div>
+              <h3>四種結論，不強迫選冠軍</h3>
+              <p>輸出只能是：<strong>明確最佳</strong>、<strong>速度—準度取捨</strong>、<strong>實質等效</strong>、<strong>證據不足</strong>。任何結論都要附玩家間一致性、95% CI 與資料品質狀態。</p>
+            </article>
+          </div>
+          <div class="callout warn" style="margin-top:16px">
+            <div><strong>不做未校準總分</strong><p>hits/min、first-shot hit rate、median/p90 hit time 維持可解釋的原始尺度。最佳組合由明確 guardrails 與 dominance 規則決定，不靠任意權重把指標壓成一個分數。</p></div>
+          </div>
+        </section>
+
+        <section class="section" id="estimands">
+          <div class="section-head">
+            <div><div class="section-index">01 / ESTIMANDS</div><h2>三個使用組合，一個主要排名</h2></div>
+            <p>顏色只作條件身份；每張圖與表格都必須同時印出文字標籤。GPW1 已確認使用 1-2-2，故可另做固定握法的滑鼠對比。</p>
+          </div>
+          <div class="grid grid-3">
+            <article class="card condition-card" style="--condition-color:var(--cat-gpw)">
+              <span class="condition-id">C1 · GPW1/122</span><span class="condition-name">GPW1 × 1-2-2</span>
+              <div class="condition-factors"><div class="factor"><span>Mouse</span><b>GPW1</b></div><div class="factor"><span>Grip</span><b>1-2-2</b></div></div>
+            </article>
+            <article class="card condition-card" style="--condition-color:var(--cat-dk122)">
+              <span class="condition-id">C2 · DK/122</span><span class="condition-name">DK × 1-2-2</span>
+              <div class="condition-factors"><div class="factor"><span>Mouse</span><b>DK</b></div><div class="factor"><span>Grip</span><b>1-2-2</b></div></div>
+            </article>
+            <article class="card condition-card" style="--condition-color:var(--cat-dk131)">
+              <span class="condition-id">C3 · DK/131</span><span class="condition-name">DK × 1-3-1</span>
+              <div class="condition-factors"><div class="factor"><span>Mouse</span><b>DK</b></div><div class="factor"><span>Grip</span><b>1-3-1</b></div></div>
+            </article>
+          </div>
+          <div class="table-wrap" style="margin-top:16px">
+            <table>
+              <thead><tr><th>Estimand</th><th>Contrast</th><th>用途</th><th>可回答</th><th>不可宣稱</th></tr></thead>
+              <tbody>
+                <tr><td class="metric-value">Overall condition</td><td>C1 vs C2 vs C3</td><td>主要排名</td><td>哪個完整使用組合表現最好</td><td>單一硬體特徵造成差異</td></tr>
+                <tr><td class="metric-value">Mouse contrast</td><td>C2 − C1</td><td>機制解釋</td><td>同為 1-2-2 時，DK 與 GPW1 的表現差</td><td>對其他握法必然成立</td></tr>
+                <tr><td class="metric-value">Grip contrast</td><td>C3 − C2</td><td>機制解釋</td><td>使用 DK 時，1-3-1 與 1-2-2 的表現差</td><td>握法效果可外推到 GPW1</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section" id="workflow">
+          <div class="section-head">
+            <div><div class="section-index">02 / WORKFLOW</div><h2>從 protocol 到最佳組合</h2></div>
+            <p>每個階段都有輸入、工作、輸出與停止條件。品質閘或辨識性不足時，流程降級而不是偷偷補值或改口徑。</p>
+          </div>
+          <ol class="workflow-overview" aria-label="八階段分析流程">
+            <li><h3>凍結 protocol</h3><p>條件、次序、seed、SESOI 與排除規則先鎖定。</p></li>
+            <li><h3>建立 manifest</h3><p>玩家、滑鼠、握法與實際順序由 manifest 明示。</p></li>
+            <li><h3>資料品質閘</h3><p>檢查 validity、metadata、時間與完整性。</p></li>
+            <li><h3>Canonical derivation</h3><p>每個周邊 presentation 建立可稽核事件錨點。</p></li>
+            <li><h3>玩家內估計</h3><p>先算每位玩家、每個條件的 outcome profile。</p></li>
+            <li><h3>群體階層模型</h3><p>保留 trial/run/player 巢狀結構與 order covariate。</p></li>
+            <li><h3>Guardrailed ranking</h3><p>品質與準度合格後，再比較速度、尾端與穩定。</p></li>
+            <li><h3>報告與封存</h3><p>HTML、long CSV、模型輸出與版本化規則一起交付。</p></li>
+          </ol>
+
+          <div class="phase-stack" style="margin-top:28px">
+            <details class="phase" open>
+              <summary><span class="phase-no">S00</span><h3>Protocol freeze</h3><span class="phase-purpose">先鎖研究問題，再看結果</span></summary>
+              <div class="phase-body">
+                <div class="phase-cell"><span class="label">Input</span><p>三條件設計、drill config、預計玩家數與 sessions。</p></div>
+                <div class="phase-cell"><span class="label">Process</span><p>預註冊 primary outcomes、SESOI、pairwise contrasts、排除與敏感度分析。</p></div>
+                <div class="phase-cell"><span class="label">Output</span><p><code>analysis-config</code> 語意版本與不可事後改寫的決策表。</p></div>
+                <div class="phase-cell gate"><span class="label">Stop rule</span><p>SESOI 尚未決定時只產生估計與 CI，不宣告實質優勝。</p></div>
+              </div>
+            </details>
+            <details class="phase">
+              <summary><span class="phase-no">S01</span><h3>Randomization & manifest</h3><span class="phase-purpose">讓 condition 與 order 可分離</span></summary>
+              <div class="phase-body">
+                <div class="phase-cell"><span class="label">Input</span><p>participant ID、session、condition order、seed bank、硬體設定。</p></div>
+                <div class="phase-cell"><span class="label">Process</span><p>三條件六種排列近似等量分配；記錄實際執行次序與偏離。</p></div>
+                <div class="phase-cell"><span class="label">Output</span><p>單一 manifest：<code>participant × session × order × condition × run</code>。</p></div>
+                <div class="phase-cell gate"><span class="label">Stop rule</span><p>條件只能由路徑猜測或缺少實際順序時，該 session 不進 confirmatory model。</p></div>
+              </div>
+            </details>
+            <details class="phase">
+              <summary><span class="phase-no">S02</span><h3>Ingest & quality gate</h3><span class="phase-purpose">先決定能否解讀</span></summary>
+              <div class="phase-body">
+                <div class="phase-cell"><span class="label">Input</span><p>所有 Spider Shot Wide JSON 與 manifest。</p></div>
+                <div class="phase-cell"><span class="label">Process</span><p>驗 drillId、schema、FOV、DPI、sensitivity、display/sim Hz、validity、overflow、pointer lock 與必要 anchors。</p></div>
+                <div class="phase-cell"><span class="label">Output</span><p>run-level quality ledger、有效 n、排除原因與 metadata parity 表。</p></div>
+                <div class="phase-cell gate"><span class="label">Stop rule</span><p>任一條件有效 runs 不足、protocol 不一致或玩家缺少條件時，降級為描述性資料。</p></div>
+              </div>
+            </details>
+            <details class="phase">
+              <summary><span class="phase-no">S03</span><h3>Canonical trial derivation</h3><span class="phase-purpose">一列對應一次周邊呈現</span></summary>
+              <div class="phase-body">
+                <div class="phase-cell"><span class="label">Input</span><p>通過 S02 的 raw ticks、visible 與 fire events。</p></div>
+                <div class="phase-cell"><span class="label">Process</span><p>使用既有 window、tracking、angular kinematics 與 geometry primitives；所有缺席值維持 null。</p></div>
+                <div class="phase-cell"><span class="label">Output</span><p><code>trial_metrics.csv</code>：事件錨點、outcomes、機制與品質旗標。</p></div>
+                <div class="phase-cell gate"><span class="label">Stop rule</span><p>首發命中必須讀 <code>firstFire.hit</code>；不得以 window eventual outcome 代替。</p></div>
+              </div>
+            </details>
+            <details class="phase">
+              <summary><span class="phase-no">S04</span><h3>Player-level profiles</h3><span class="phase-purpose">保留每位玩家的選擇</span></summary>
+              <div class="phase-body">
+                <div class="phase-cell"><span class="label">Input</span><p>trial-level long table。</p></div>
+                <div class="phase-cell"><span class="label">Process</span><p>每位玩家 × condition 計算 hits/min、first-shot hit rate、median/p90 hit time、timeout 與穩定度。</p></div>
+                <div class="phase-cell"><span class="label">Output</span><p>個人條件 profile、paired deltas、run drift 與左右側敏感度檢查。</p></div>
+                <div class="phase-cell gate"><span class="label">Stop rule</span><p>trial 很多不等於玩家很多；個人 profile 不產生母體 p-value。</p></div>
+              </div>
+            </details>
+            <details class="phase">
+              <summary><span class="phase-no">S05</span><h3>Cohort hierarchical models</h3><span class="phase-purpose">推估群體與玩家差異</span></summary>
+              <div class="phase-body">
+                <div class="phase-cell"><span class="label">Input</span><p>所有玩家的 long table、randomization order 與 sessions。</p></div>
+                <div class="phase-cell"><span class="label">Process</span><p>依 outcome 選 GLMM、count model、time-to-event 或 bootstrap；玩家含 random condition slope。</p></div>
+                <div class="phase-cell"><span class="label">Output</span><p>三條件調整後估計、三組 pairwise contrasts、95% CI 與玩家間分布。</p></div>
+                <div class="phase-cell gate"><span class="label">Stop rule</span><p>模型不收斂、order balance 失敗或 CI 過寬時，不進明確排名。</p></div>
+              </div>
+            </details>
+            <details class="phase">
+              <summary><span class="phase-no">S06</span><h3>Guardrailed ranking</h3><span class="phase-purpose">選最佳，不掩蓋取捨</span></summary>
+              <div class="phase-body">
+                <div class="phase-cell"><span class="label">Input</span><p>調整後 outcomes、SESOI、multiplicity-corrected contrasts。</p></div>
+                <div class="phase-cell"><span class="label">Process</span><p>先過品質與準度 non-inferiority，再以 hits/min、p90 hit time、穩定度做 dominance 判斷。</p></div>
+                <div class="phase-cell"><span class="label">Output</span><p>明確最佳／取捨／等效／證據不足，另附每位玩家的 winner distribution。</p></div>
+                <div class="phase-cell gate"><span class="label">Stop rule</span><p>沒有條件通過全部 guardrails 時，禁止用平均名次強行產生冠軍。</p></div>
+              </div>
+            </details>
+            <details class="phase">
+              <summary><span class="phase-no">S07</span><h3>Report & reproducibility</h3><span class="phase-purpose">每個結論可回到 raw trial</span></summary>
+              <div class="phase-body">
+                <div class="phase-cell"><span class="label">Input</span><p>品質表、trial data、模型估計、decision state 與版本資訊。</p></div>
+                <div class="phase-cell"><span class="label">Process</span><p>固定報告順序：quality → n → overall ranking → contrasts → mechanisms → sensitivity。</p></div>
+                <div class="phase-cell"><span class="label">Output</span><p>自包含 HTML、CSV/Parquet、model table、config 與 audit trail。</p></div>
+                <div class="phase-cell gate"><span class="label">Stop rule</span><p>報告若無法顯示排除原因、有效 n 或 uncertainty，即不視為完成。</p></div>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section class="section" id="metrics">
+          <div class="section-head">
+            <div><div class="section-index">03 / METRICS</div><h2>結果、機制、品質分層</h2></div>
+            <p>Primary outcomes 決定最佳組合；mechanism diagnostics 只解釋差異來自 transport、braking 或 trigger，不反過來偷換主要結果。</p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>層級</th><th>指標</th><th>方向</th><th>主要摘要</th><th>統計角色</th></tr></thead>
+              <tbody>
+                <tr><td>Primary</td><td class="metric-value">first_shot_hit_rate</td><td class="direction up">higher → good</td><td>全部 peripheral presentations 為分母</td><td>準度 guardrail</td></tr>
+                <tr><td>Primary</td><td class="metric-value">peripheral_hits_per_min</td><td class="direction up">higher → good</td><td>有效命中數／active duration</td><td>主要效率排名</td></tr>
+                <tr><td>Primary</td><td class="metric-value">peripheral_hit_time</td><td class="direction down">lower → good</td><td>median + p90；timeout 保留右截</td><td>速度與尾端風險</td></tr>
+                <tr><td>Primary</td><td class="metric-value">timeout_rate</td><td class="direction down">lower → good</td><td>不刪除、不補成固定 ms</td><td>失敗風險 guardrail</td></tr>
+                <tr><td>Reliability</td><td class="metric-value">within_condition_variability</td><td class="direction down">lower → good</td><td>run-to-run 與 player-level spread</td><td>排名 tie-breaker</td></tr>
+                <tr><td>Mechanism</td><td class="metric-value">movement_time_ms</td><td class="direction down">lower → good</td><td>onset → first on-target</td><td>transport + braking</td></tr>
+                <tr><td>Mechanism</td><td class="metric-value">peak_omega / entry_omega</td><td>contextual</td><td>依 D 解讀，不單獨追求峰速</td><td>速度放大與卸速</td></tr>
+                <tr><td>Mechanism</td><td class="metric-value">brake_retention</td><td class="direction down">lower → controlled</td><td>entry ω / peak ω</td><td>進靶前煞停品質</td></tr>
+                <tr><td>Mechanism</td><td class="metric-value">trigger_margin_ms</td><td class="direction zero">target-dependent</td><td>first fire − first on-target</td><td>搶拍／確認延遲</td></tr>
+                <tr><td>Mechanism</td><td class="metric-value">overshoot / drop / micro-adjust</td><td class="direction down">lower → stable</td><td>首次進靶後控制</td><td>穩定與修正成本</td></tr>
+                <tr><td>Quality</td><td class="metric-value">validity / repositioning / baseline</td><td>pass / flag</td><td>明示 flag 與排除原因</td><td>納入與敏感度分析</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout" style="margin-top:16px">
+            <div><strong>Reaction time 的地位</strong><p>因 KI-034 pre-stimulus baseline coverage 風險，reaction_ms 先作 sensitivity metric。只有 coverage 與 detector health 達到預先門檻時，才升為正式 mechanism conclusion。</p></div>
+          </div>
+        </section>
+
+        <section class="section" id="models">
+          <div class="section-head">
+            <div><div class="section-index">04 / MODELS</div><h2>符合資料生成結構的模型</h2></div>
+            <p>trial 巢狀於 run、session 與 player；同一玩家的數百個 trial 不能當成數百位獨立受試者。主要推論單位仍是玩家。</p>
+          </div>
+          <div class="grid grid-2">
+            <article class="card model-card" style="--model-color:var(--cat-gpw)">
+              <div class="label">Binary outcome</div><h3 style="margin-top:8px">首發命中 · Logistic GLMM</h3>
+              <div class="formula">first_shot_hit ~ condition + order_position + run + side + D + pitch + (1 + condition | player)</div>
+              <ul><li>輸出 adjusted probability difference（percentage points）與 odds ratio。</li><li>未開火、timeout 留在分母並編碼為未首發命中。</li><li>三組 pairwise contrasts 使用 Holm correction。</li></ul>
+            </article>
+            <article class="card model-card" style="--model-color:var(--cat-dk122)">
+              <div class="label">Rate outcome</div><h3 style="margin-top:8px">有效命中速度 · Count model</h3>
+              <div class="formula">hit_count ~ condition + order_position + run + offset(log(active_minutes)) + (1 + condition | player)</div>
+              <ul><li>優先評估 Poisson dispersion；過度離散時改 negative binomial。</li><li>輸出 adjusted hits/min 與 rate ratio。</li><li>永遠與 first-shot hit rate 並列。</li></ul>
+            </article>
+            <article class="card model-card" style="--model-color:var(--cat-dk131)">
+              <div class="label">Censored time</div><h3 style="margin-top:8px">命中時間 · Survival / AFT</h3>
+              <div class="formula">time_to_hit ~ condition + order_position + run + side + D + pitch + player frailty</div>
+              <ul><li>timeout 是 right-censored，不從資料中刪除。</li><li>輸出 median / restricted mean time 與條件差。</li><li>另以 uncensored log-time mixed model 作敏感度分析。</li></ul>
+            </article>
+            <article class="card model-card" style="--model-color:var(--violet)">
+              <div class="label">Tail & robustness</div><h3 style="margin-top:8px">p90 與一致性 · Hierarchical bootstrap</h3>
+              <div class="formula">resample player → session → run; keep trials within sampled run</div>
+              <ul><li>p90 不用一般 t-test。</li><li>保留相依結構並估 95% bootstrap CI。</li><li>報告各條件成為最佳者的 player-bootstrap 比例，但不把它當 posterior probability。</li></ul>
+            </article>
+          </div>
+          <div class="callout ok" style="margin-top:16px">
+            <div><strong>隨機順序仍要進模型</strong><p>隨機化讓 condition 與 order 可辨識，但不代表 order effect 消失。模型保留 <code>order_position</code>、<code>run</code> 與 session；若某位玩家偏離排程，分析依實際次序處理並另做 per-protocol sensitivity。</p></div>
+          </div>
+        </section>
+
+        <section class="section" id="ranking">
+          <div class="section-head">
+            <div><div class="section-index">05 / RANKING</div><h2>Guardrailed ranking：怎麼選最佳</h2></div>
+            <p>排名先確定「沒有用準度換速度」，再回答哪個條件提供更高有效產出。SESOI 必須在正式看結果前由 coaching／產品團隊確認。</p>
+          </div>
+          <div class="decision-lane" aria-label="最佳組合四步判定">
+            <article class="decision-step"><span class="label">Gate 1</span><b>資料資格</b><p>有效 runs、metadata parity、randomization 與品質旗標通過。</p></article>
+            <article class="decision-step"><span class="label">Gate 2</span><b>準度不劣</b><p>首發命中與 timeout 不得劣於最佳條件超過預設 SESOI。</p></article>
+            <article class="decision-step"><span class="label">Rank 1</span><b>有效產出</b><p>比較 adjusted hits/min；差異須超過 SESOI 且 CI 支持。</p></article>
+            <article class="decision-step"><span class="label">Tie break</span><b>尾端與穩定</b><p>比較 p90 hit time、run-to-run variability 與玩家一致性。</p></article>
+          </div>
+          <div class="outcome-grid">
+            <div class="outcome best"><b>明確最佳</b><span>一個條件通過 guardrails，並在至少一項主要效能實質勝出、其他項不實質退化。</span></div>
+            <div class="outcome trade"><b>速度—準度取捨</b><span>最快條件在準度、timeout 或尾端時間上有實質代價；並列 profile，不選單一冠軍。</span></div>
+            <div class="outcome equiv"><b>實質等效</b><span>主要差異的 CI 全部落在預設 equivalence margins 內；依舒適度或偏好選擇。</span></div>
+            <div class="outcome uncertain"><b>證據不足</b><span>CI 太寬、玩家結果異質、樣本不足、品質失效或模型無法辨識。</span></div>
+          </div>
+          <div class="table-wrap" style="margin-top:20px">
+            <table>
+              <thead><tr><th>決策參數</th><th>符號</th><th>鎖定方式</th><th>目前狀態</th></tr></thead>
+              <tbody>
+                <tr><td>首發命中 non-inferiority margin</td><td class="metric-value">δ<sub>accuracy</sub></td><td>以 Stage A 變異、測量誤差與 coaching 意義共同決定</td><td>待 pilot 後預註冊</td></tr>
+                <tr><td>有效命中速度最小重要差</td><td class="metric-value">δ<sub>rate</sub></td><td>以 hits/min 原尺度設定，不用標準化效應替代</td><td>待 pilot 後預註冊</td></tr>
+                <tr><td>命中時間最小重要差</td><td class="metric-value">δ<sub>time</sub></td><td>median 與 p90 分別設定</td><td>待 pilot 後預註冊</td></tr>
+                <tr><td>等效範圍</td><td class="metric-value">±δ</td><td>所有主要 outcome 的 CI 都需落入範圍</td><td>不得看資料後擴大</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section" id="operations">
+          <div class="section-head">
+            <div><div class="section-index">06 / OPERATIONS</div><h2>多受試者實驗如何執行</h2></div>
+            <p>未來增加玩家時，重點不是再堆更多 trial，而是讓每位玩家都完成三條件、次序平衡且跨 session 可重測。</p>
+          </div>
+          <div class="grid grid-3">
+            <article class="card"><div class="label">Order balance</div><h3 style="margin-top:8px">六種排列近似等量</h3><p class="mono">ABC · ACB · BAC · BCA · CAB · CBA</p><p>每位玩家依預先產生的表分配；若跨多日，下一 session 換不同排列，避免條件永遠佔同一位置。</p></article>
+            <article class="card"><div class="label">Seed balance</div><h3 style="margin-top:8px">配對，但不背同一序列</h3><p>建立多 seed bank。同一 matched triplet 使用同 seed 以控制刺激；seed 對 condition 的對應跨玩家與 session 輪換，避免所有人永遠背 <code>57001</code>。</p></article>
+            <article class="card"><div class="label">Session structure</div><h3 style="margin-top:8px">熟悉、正式、洗脫</h3><p>每個條件先固定短 familiarization，再進等長正式 runs；條件間休息與換鼠適應時間固定並寫入 manifest。</p></article>
+            <article class="card"><div class="label">Sample unit</div><h3 style="margin-top:8px">玩家數決定外推能力</h3><p>每條件至少累積 30 個周邊 presentations；正式樣本數依 pilot 的 player-level variance 做 simulation，不用 400 個 trial 偽裝成 n=400。</p></article>
+            <article class="card"><div class="label">Protocol parity</div><h3 style="margin-top:8px">硬體條件鎖定</h3><p>固定 DPI、sensitivity、FOV、aspect、display mode、refresh、mousepad 與 seat setup；每份 export 都要自動對帳。</p></article>
+            <article class="card"><div class="label">Repeatability</div><h3 style="margin-top:8px">跨日驗證穩定性</h3><p>至少兩個 sessions 才能估 condition ranking 的重測一致性；若最佳組合跨日翻轉，結果標記為個人情境依賴。</p></article>
+          </div>
+          <div class="callout warn" style="margin-top:16px">
+            <div><strong>S01 的定位</strong><p>現有 S01 有 3 條件 × 3 runs、共 417 次 peripheral presentations，且 seed 前綴相同；適合驗證 trial derivation、配對與報告。因玩家 n=1 且當次順序固定，只能作 pilot case，不參與未來 confirmatory cohort 的隨機順序效應估計。</p></div>
+          </div>
+        </section>
+
+        <section class="section" id="outputs">
+          <div class="section-head">
+            <div><div class="section-index">07 / OUTPUTS</div><h2>交付物、報告順序與誠實邊界</h2></div>
+            <p>每個摘要值都要能回到玩家、run 與 presentation。報告不只輸出「誰贏」，也輸出為什麼能回答、哪裡仍不能回答。</p>
+          </div>
+          <div class="grid grid-2">
+            <article class="card">
+              <div class="label">Artifacts</div><h3 style="margin:8px 0 14px">版本化輸出</h3>
+              <div class="artifact-list">
+                <div class="artifact"><span class="mono">cohort_manifest.csv</span><span>條件、順序、seed、session、偏離與設備設定。</span></div>
+                <div class="artifact"><span class="mono">quality_ledger.csv</span><span>run/trial 品質旗標、排除原因與有效 n。</span></div>
+                <div class="artifact"><span class="mono">trial_metrics.parquet</span><span>一列一 peripheral presentation 的 canonical long table。</span></div>
+                <div class="artifact"><span class="mono">model_estimates.csv</span><span>調整後條件估計、contrasts、CI 與 multiplicity status。</span></div>
+                <div class="artifact"><span class="mono">decision.json</span><span>SESOI、guardrail verdict、最佳狀態與理由。</span></div>
+                <div class="artifact"><span class="mono">cohort_report.html</span><span>品質 → 排名 → 玩家分布 → 機制 → sensitivity 的自包含報告。</span></div>
+              </div>
+            </article>
+            <article class="card">
+              <div class="label">Report order</div><h3 style="margin:8px 0 14px">閱讀順序不可顛倒</h3>
+              <ol style="margin:0;padding-left:20px;color:var(--text-mid)">
+                <li>Protocol 與資料品質</li>
+                <li>有效 players / sessions / runs / trials</li>
+                <li>三條件 outcome profile</li>
+                <li>Guardrailed ranking verdict</li>
+                <li>每位玩家的 condition deltas 與 winner distribution</li>
+                <li>Mouse contrast 與 grip contrast</li>
+                <li>Transport、braking、trigger 機制</li>
+                <li>Order、side、repositioning、reaction sensitivity</li>
+              </ol>
+            </article>
+          </div>
+          <div class="callout" style="margin-top:16px">
+            <div><strong>分析實作注意</strong><p><code>PeekWindow.outcome</code> 是窗內任何一發命中；首發命中必須讀第一個 compatible fire 自身的 <code>hit</code>。命中時間 timeout 視為 censored；缺資料一律用 null 與原因碼，不以 0 取代。</p></div>
+          </div>
+
+          <details class="card mermaid-source" style="margin-top:20px">
+            <summary>查看可版本控制的 Mermaid workflow source</summary>
+            <pre><code>flowchart TB
+    accTitle: Mouse Grip Analysis Workflow
+    accDescr: Eight-stage workflow from frozen protocol and randomized manifest through quality gates, canonical trial derivation, hierarchical modeling, guardrailed ranking, and reproducible reporting
+
+    protocol([Protocol freeze]) --&gt; manifest[Randomize and build manifest]
+    manifest --&gt; quality{Quality gate passed?}
+    quality --&gt;|No| descriptive[Descriptive only]
+    quality --&gt;|Yes| derive[Derive canonical trials]
+    derive --&gt; player[Build player profiles]
+    player --&gt; cohort[Fit cohort models]
+    cohort --&gt; rank{Guardrails passed?}
+    rank --&gt;|Yes| winner[Declare best combination]
+    rank --&gt;|No| honest[Report tradeoff, equivalence, or uncertainty]
+    winner --&gt; report([Publish report and audit trail])
+    honest --&gt; report
+    descriptive --&gt; report
+
+    classDef start fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#3b0764
+    classDef process fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a5f
+    classDef decision fill:#fef9c3,stroke:#ca8a04,stroke-width:2px,color:#713f12
+    classDef success fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d
+    classDef caution fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#7f1d1d
+
+    class protocol,report start
+    class manifest,derive,player,cohort process
+    class quality,rank decision
+    class winner success
+    class descriptive,honest caution</code></pre>
+          </details>
+
+          <div class="card" style="margin-top:20px">
+            <div class="label">Sources & provenance</div>
+            <ol class="footnotes">
+              <li><a href="../spider-shot-wide-v1-performance-metrics-proposal-2026-09-09.html">Spider Shot Wide v1 表現指標與結果視覺化提案</a>：構念、主要結果、品質標註與真人驗證邊界。</li>
+              <li><a href="../spider-shot-wide-v1-angular-speed-coaching-2026-09-10.html">Spider Shot Wide v1 Angular Speed 教練視覺化</a>：煞停保留率、擊發邊際、邊緣後延遲與補槍成本。</li>
+              <li><span class="mono">data/BQC-test/DKMouse/S01</span>：現有 pilot；三條件各 3 runs。</li>
+              <li>本文件是 analysis design，不包含結果、常模、及格線或玩家能力等級。</li>
+            </ol>
+          </div>
+        </section>
+      </div>
+
+      <footer class="document-footer">
+        Spider Shot Wide v1 · Mouse × Grip Best-Combination Analysis Workflow · 2026-09-17 · Self-contained HTML
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="整合 Spider Shot Wide 滑鼠與握法比較：既有 S01 pilot、正式交叉測試、資料品質、統計決策與個人教練複測的最終 workflow。">
+  <title>滑鼠 × 握法｜最終整合 Workflow · Spider Shot Wide</title>
+  <style>
+    :root {
+      --bg-0:#0f1113; --bg-1:#16191d; --bg-2:#1e2227;
+      --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+      --text-hi:#edeff2; --text-mid:#aeb4bc; --text-lo:#939ca8;
+      --accent:#e8285a; --accent-hi:#ff3d6e; --accent-dim:rgba(232,40,90,.14);
+      --ok:#2ecc71; --warn:#f5a623; --bad:#ff5470;
+      --cat-1:#e83a6a; --cat-2:#f5a623; --cat-3:#3fa9f5; --cat-4:#9b6dff;
+      --font-ui:Inter,"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+      --font-mono:"IBM Plex Mono","Cascadia Code",Consolas,monospace;
+      --r-card:12px; --r-control:8px; --sp-4:16px; --sp-6:24px; --sp-8:32px;
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:var(--bg-0); color:var(--text-hi); font:15px/1.8 var(--font-ui); }
+    a { color:var(--cat-3); text-underline-offset:4px; overflow-wrap:anywhere; }
+    a:hover { color:var(--text-hi); }
+    a:focus-visible,summary:focus-visible { outline:3px solid var(--accent-hi); outline-offset:4px; }
+    .skip { position:absolute; top:-100px; left:20px; padding:12px; background:var(--bg-2); z-index:10; }
+    .skip:focus { top:10px; }
+    .layout { display:grid; grid-template-columns:240px minmax(0,1fr); max-width:1540px; margin:auto; }
+    aside { position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:30px 22px; border-right:1px solid var(--line); }
+    .brand { font-weight:800; letter-spacing:.08em; border-left:5px solid var(--accent); padding-left:12px; }
+    .label,.eyebrow,.num { font:700 12px/1.5 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; }
+    .label { color:var(--text-lo); } .eyebrow,.num { color:var(--accent-hi); }
+    nav { margin-top:28px; } nav a { display:block; padding:7px 8px; color:var(--text-mid); text-decoration:none; font-size:13px; border-radius:5px; }
+    nav a:hover { background:var(--bg-2); } aside p { font-size:12px; color:var(--text-lo); }
+    main { min-width:0; }
+    .hero { padding:64px clamp(22px,5vw,72px) 40px; border-bottom:1px solid var(--line-strong); }
+    h1 { font-size:clamp(32px,4.8vw,62px); line-height:1.17; letter-spacing:-.04em; margin:16px 0 22px; }
+    h1 span { color:var(--text-mid); } .lede { max-width:840px; font-size:18px; color:var(--text-mid); }
+    .meta { display:flex; flex-wrap:wrap; gap:8px; margin:24px 0; }
+    .tag { display:inline-block; padding:3px 10px; border:1px solid var(--line-strong); border-radius:30px; color:var(--text-mid); font-size:12px; }
+    .content { padding:0 clamp(22px,5vw,72px); }
+    section { padding:44px 0; border-bottom:1px solid var(--line); scroll-margin-top:20px; }
+    h2 { font-size:27px; line-height:1.35; margin:8px 0 18px; letter-spacing:-.02em; }
+    h3 { font-size:18px; margin:0 0 10px; } h4 { font-size:15px; margin:18px 0 6px; }
+    p { margin:10px 0; } .muted, small { color:var(--text-mid); } small { font-size:12px; }
+    .grid { display:grid; gap:16px; } .two { grid-template-columns:repeat(2,minmax(0,1fr)); } .three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .card { padding:22px; border:1px solid var(--line-strong); border-radius:var(--r-card); background:var(--bg-1); min-width:0; }
+    .card p:last-child { margin-bottom:0; } .condition { border-top:3px solid var(--condition); }
+    .condition .label { color:var(--condition); }
+    .a { --condition:var(--cat-3); } .b { --condition:var(--cat-1); } .c { --condition:var(--cat-2); }
+    .note { border-left:3px solid var(--accent); padding:14px 20px; margin:20px 0; background:var(--bg-1); }
+    .note.warn { border-color:var(--warn); } .note.ok { border-color:var(--ok); }
+    .note p { margin:4px 0; }
+    .table-wrap { overflow-x:auto; border:1px solid var(--line-strong); border-radius:var(--r-control); margin:18px 0; }
+    table { width:100%; border-collapse:collapse; font-size:13px; line-height:1.7; background:var(--bg-1); }
+    caption { text-align:left; padding:12px 16px; color:var(--text-mid); background:var(--bg-2); font-size:12px; }
+    th,td { text-align:left; vertical-align:top; padding:12px 14px; border-bottom:1px solid var(--line); }
+    th { color:var(--text-hi); background:var(--bg-2); font-weight:700; } tbody th { min-width:115px; }
+    tr:last-child td,tr:last-child th { border-bottom:0; }
+    .wide { min-width:700px; } .numbers { font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+    code { font-family:var(--font-mono); font-size:.88em; color:var(--text-hi); overflow-wrap:anywhere; }
+    .formula { padding:15px; background:var(--bg-2); border:1px solid var(--line); border-radius:var(--r-control); font:13px/1.9 var(--font-mono); overflow-wrap:anywhere; }
+    ul,ol { padding-left:23px; } li { margin:5px 0; }
+    .flow { list-style:none; padding:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
+    .flow li { margin:0; padding:16px 12px; background:var(--bg-1); border-top:2px solid var(--line-strong); }
+    .flow b { display:block; margin:8px 0; font-size:14px; } .flow small { display:block; line-height:1.6; }
+    details { margin:12px 0; border:1px solid var(--line-strong); border-radius:var(--r-control); background:var(--bg-1); }
+    summary { cursor:pointer; padding:16px 20px; font-weight:700; } .detail { padding:0 20px 18px; }
+    .verdict { border-top:3px solid var(--cat-4); } .verdict.good { border-color:var(--ok); } .verdict.trade { border-color:var(--warn); }
+    .mini { font-size:13px; } .spaced { margin-top:20px; }
+    footer { padding:32px clamp(22px,5vw,72px); color:var(--text-lo); font-size:12px; }
+    @media (max-width:1180px) { .layout { grid-template-columns:205px minmax(0,1fr); } .flow { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    @media (max-width:800px) { .layout { display:block; } aside { position:static; height:auto; padding:20px; border-right:0; border-bottom:1px solid var(--line); } nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); margin-top:12px; } aside p { display:none; } .hero { padding-top:36px; } .two,.three { grid-template-columns:1fr; } h2 { font-size:24px; } }
+    @media (max-width:380px) { .flow { grid-template-columns:1fr; } }
+    @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+    @media print {
+      :root { --bg-0:#fff; --bg-1:#fff; --bg-2:#f1f2f4; --text-hi:#15171b; --text-mid:#353b44; --text-lo:#454b55; --line:#ccc; --line-strong:#aaa; --cat-3:#005f9c; --accent-hi:#a91640; }
+      @page { margin:15mm; } body { font-size:10pt; } .layout { display:block; } aside,.skip { display:none; }
+      .hero,.content,footer { padding-left:0; padding-right:0; } .hero { padding-top:0; } h1 { font-size:30pt; }
+      section { padding:20px 0; } .table-wrap { overflow:visible; } .wide { min-width:0; } table { font-size:9pt; }
+      th,td { padding:7px; } tr,.card { break-inside:avoid; } thead { display:table-header-group; }
+      h2,h3,summary { break-after:avoid; } a { color:inherit; } .flow { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      details > .detail { display:block !important; } details::details-content { display:block; content-visibility:visible; }
+    }
+  </style>
+</head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+<div class="layout">
+  <aside aria-label="文件導覽">
+    <div class="brand">AIM ANALYST<br><span class="label">Coaching protocol</span></div>
+    <nav aria-label="章節">
+      <a href="#brief">00 決策與整合原則</a>
+      <a href="#evidence">01 S01 資料與限制</a>
+      <a href="#workflow">02 最終十步 Workflow</a>
+      <a href="#protocol">03 正式測試排程</a>
+      <a href="#data">04 必備資料字典</a>
+      <a href="#quality">05 品質閘與計時</a>
+      <a href="#metrics">06 指標與事件定義</a>
+      <a href="#analysis">07 個人／群體分析</a>
+      <a href="#decision">08 最佳組合決策</a>
+      <a href="#coaching">09 教練處方與複測</a>
+      <a href="#delivery">10 報告與驗收</a>
+      <a href="#sources">11 來源與方法依據</a>
+    </nav>
+    <p>2026-09-17 · 整合版 v2.0<br>流程設計已整合<br>正式研究參數仍須凍結<br>本頁沒有條件勝負結果</p>
+  </aside>
+  <main id="main">
+    <header class="hero">
+      <div class="eyebrow">Spider Shot Wide v1 / Final integrated workflow</div>
+      <h1>找出能穩定重現的<br><span>滑鼠 × 握法組合</span></h1>
+      <p class="lede">先確認資料可信，再比較準度與有效產出，最後用跨日複測與實際遊戲情境決定是否換裝。群體平均提供參考，個人的可重現改善才支持個人選用。</p>
+      <div class="meta"><span class="tag">3 個條件</span><span class="tag">既有 pilot → 隨機交叉測試</span><span class="tag">品質 → 準度 → 產出 → 複測</span><span class="tag">離線 HTML · 無外部依賴</span></div>
+      <div class="note"><strong>教練的決策順序</strong><p>先看能否可靠命中，再看每分鐘完成多少次；檢查最慢的一批試次與持續操作的代價。沒有足夠證據時，保留現有習慣或提出複測方案，不用總分硬選冠軍。</p></div>
+    </header>
+    <div class="content">
+      <section id="brief">
+        <div class="num">00 / Decision contract</div><h2>同一條流程，回答三個層次的問題</h2>
+        <div class="grid three">
+          <article class="card condition a"><div class="label">A · C1</div><h3>GPW1 × 1-2-2</h3><p>原文件已確認的握法標籤。完整型號、實體設備 ID 與使用設定，仍由 manifest 記錄。</p></article>
+          <article class="card condition b"><div class="label">B · C2</div><h3>DK × 1-2-2</h3><p>B − A：固定 1-2-2，比較兩個裝置配置。不能歸因到重量、形狀或感測器的單一特徵。</p></article>
+          <article class="card condition c"><div class="label">C · C3</div><h3>DK × 1-3-1</h3><p>C − B：固定 DK，比較兩種握法。C − A 仍是完整組合對比。</p></article>
+        </div>
+        <p>本流程的 1-2-2／1-3-1 指手指配置；收案時用手背／側面照片和按鍵分工確認，另記 palm、claw、fingertip 接觸型態，避免同一標籤代表不同操作。缺少 GPW1 × 1-3-1，所以<strong>不能估完整 mouse × grip 交互作用</strong>。</p>
+        <div class="table-wrap"><table><caption>結論層級與可接受的說法</caption><thead><tr><th scope="col">層級</th><th scope="col">問題</th><th scope="col">需要的證據</th></tr></thead><tbody>
+          <tr><th scope="row">既有 S01 pilot</th><td>這次固定順序下，哪些行為差異值得追查？</td><td>品質、原始差值、時間軸；只能描述，不能確認器材優勢。</td></tr>
+          <tr><th scope="row">個人選用</th><td>這位玩家在哪個組合下穩定受益？</td><td>玩家內平衡次序、多日重複、實質差異與獨立確認。</td></tr>
+          <tr><th scope="row">群體比較</th><td>對已招募的目標玩家，哪個組合平均較好？</td><td>足夠玩家、隨機交叉設計、階層分析；平均效應與個體差異分開報。</td></tr>
+        </tbody></table></div>
+        <h3 class="spaced">整合時明確修正的規則</h3>
+        <div class="table-wrap"><table class="wide"><thead><tr><th scope="col">原文件的重點／分歧</th><th scope="col">最終採用</th><th scope="col">原因</th></tr></thead><tbody>
+          <tr><td>兩個機制對比 vs. 三條件排名</td><td>主頁呈現 A/B/C profile 與全部三組對比；B−A、C−B 另做並列解釋。</td><td>完整組合是選用單位；對比相加的代數關係不是獨立佐證。</td></tr>
+          <tr><td>Δ 超過漂移外推後可報方向</td><td>S01 全部維持描述性；漂移僅作情境敏感度。</td><td>三個 run 的短期斜率不能識別跨 17／68 分鐘空窗的時間效應。</td></tr>
+          <tr><td>疑似 repositioning 先排除</td><td>主結果保留；標記、分層，排除版只作敏感度。</td><td>未重校準的代理標記不是硬體故障；排除可能切掉真實使用成本。</td></tr>
+          <tr><td>43 次共同前綴配對</td><td>保留為 S01 的刺激配對診斷；全 run 產出仍用完整 60 秒。</td><td>43 是這批資料的交集，不是未來研究固定樣本數或功效保證。</td></tr>
+          <tr><td>成功命中 median／p90</td><td>主時間分布納入右截；另標「僅成功試次」的描述性摘要。</td><td>避免失敗最多的條件反而因丟掉慢試次而看起來最快。</td></tr>
+          <tr><td>三個 run 離散度作 MDC proxy</td><td>改稱探索性 run 波動；MDC／重測誤差需獨立重測資料。</td><td>測量誤差、實質重要差與統計顯著是三件不同的事。</td></tr>
+        </tbody></table></div>
+      </section>
+
+      <section id="evidence">
+        <div class="num">01 / Existing evidence</div><h2>S01 是方法試車資料，不是選鼠結論</h2>
+        <p>2026-09-15 的既有資料：<code>data/BQC-test/DKMouse/S01/</code>。本次整合另以唯讀方式核對 9 份 Wide JSON 的事件數、seed、共同座標前綴、tick 時長與主要 metadata；沒有執行效能統計或產生最佳組合。</p>
+        <div class="table-wrap"><table><caption>本次核對的資料盤點；不是表現排名</caption><thead><tr><th scope="col">條件</th><th scope="col">Runs</th><th scope="col">周邊呈現</th><th scope="col">右鍵按下／run</th><th scope="col">時序</th></tr></thead><tbody>
+          <tr><th scope="row">A · GPW1/122</th><td class="numbers">3</td><td class="numbers">45 + 45 + 46 = 136</td><td class="numbers">0 / 0 / 0</td><td>UTC 06:56–07:01</td></tr>
+          <tr><th scope="row">B · DK/122</th><td class="numbers">3</td><td class="numbers">49 + 49 + 47 = 145</td><td class="numbers">1 / 0 / 0</td><td>UTC 08:07–08:12</td></tr>
+          <tr><th scope="row">C · DK/131</th><td class="numbers">3</td><td class="numbers">43 + 46 + 47 = 136</td><td class="numbers">34 / 28 / 17</td><td>UTC 08:27–08:32</td></tr>
+        </tbody></table></div>
+        <p class="mini muted">合計 417 次周邊呈現；9 個 run 的前 43 次周邊目標座標逐位相同。首發與命中時間尚未在本文件計算。右鍵計數來自 <code>event.type = ads</code> 且 <code>down = true</code>，不是名為 adsDown 的原始事件。</p>
+        <div class="grid two">
+          <article class="card"><h3>可利用的控制</h3><p>seed 57001；sensitivity 1.3；DPI 800；FOV 75；記錄 displayHz 601、simHz 128。原文件另報 1920×1080。顯示 metadata 與 DPI 自報值不等於獨立儀器校準。</p><p>原文件的實測角距約 47.7–51.9°：本批只檢查角距與左右平衡，不估大範圍的角距—表現曲線。</p></article>
+          <article class="card"><h3>不能補救的混淆</h3><p>條件順序 A → B → C 完全固定。原文約 68／17 分鐘指相鄰條件區段的空窗尺度；分析須由實際時間戳計算所用間隔。</p><p>休息、其他 drill、熟悉與疲勞都可能改變表現。CI 很窄也不能消除這種混淆。</p></article>
+        </div>
+        <div class="note warn"><strong>新增的計時核對</strong><p>8 個 run 的 tick 跨度為 63 秒；A 的第一 run 為 68.0625 秒；首個 visible 都在 +3 秒。這與「3 秒倒數 + 60 秒任務，另有一筆約 5.06 秒錄製尾巴」相容。<code>meta.maxDrillSeconds = 300</code> 則不是這次任務的 active duration。正式抽取必須按 <a href="#quality">§05</a> 記錄邊界來源。</p></div>
+        <p>匯出沒有 <code>mouseSamples</code>，因此不做 polling／sensor 表現推論。原文件記載本批 <code>usp_s_laser</code> 未啟用 ADS；右鍵不改遊戲瞄準幾何，但其手指動作仍可能與控制表現相關。稱為「右鍵觸發」；只有經玩家／觀察紀錄確認，才標記「非預期」。</p>
+      </section>
+
+      <section id="workflow">
+        <div class="num">02 / End-to-end workflow</div><h2>十個步驟，每一步都有出口</h2>
+        <ol class="flow" aria-label="最終流程概覽">
+          <li><span class="num">S00</span><b>凍結問題</b><small>母體、目標、門檻、樣本計畫</small></li>
+          <li><span class="num">S01</span><b>確認熟悉度</b><small>手型、慣用配置、等量適應</small></li>
+          <li><span class="num">S02</span><b>平衡交叉測試</b><small>三條件、六種次序、多日</small></li>
+          <li><span class="num">S03</span><b>品質與時間閘</b><small>去重、參數、有效區間</small></li>
+          <li><span class="num">S04</span><b>抽取事件與指標</b><small>首發、命中、右截、原因碼</small></li>
+          <li><span class="num">S05</span><b>建立個人 profile</b><small>完整產出、差值、日間變化</small></li>
+          <li><span class="num">S06</span><b>分層統計</b><small>pilot／個人／群體分開</small></li>
+          <li><span class="num">S07</span><b>做有門檻的決策</b><small>最佳、取捨、等效、未定</small></li>
+          <li><span class="num">S08</span><b>教練驗證</b><small>機制檢視、確認日、轉移</small></li>
+          <li><span class="num">S09</span><b>交付與封存</b><small>建議、限制、複测、可重現檔</small></li>
+        </ol>
+        <div class="table-wrap"><table class="wide"><caption>執行契約：品質不足的資料仍有報告出口</caption><thead><tr><th scope="col">步驟／負責者</th><th scope="col">輸入 → 工作 → 輸出</th><th scope="col">停止或降級條件</th></tr></thead><tbody>
+          <tr><th scope="row">S00 教練＋分析者</th><td>選用問題 → 鎖定測試目標、主要指標、SESOI、排除與分析順序 → protocol + analysis config。</td><td>未鎖門檻／樣本計畫：只作 pilot，不作確認性優勝判定。</td></tr>
+          <tr><th scope="row">S01 測試員</th><td>玩家背景 → 確認握法與適應狀態 → baseline + familiarity ledger。</td><td>配置不明、無法維持指定握法：先補訓或改為探索性。</td></tr>
+          <tr><th scope="row">S02 測試員</th><td>seeded 排程 → 執行平衡 block、休息、問卷 → raw JSON + manifest + deviation log。</td><td>不適／中斷：停止該次測試並留原因；不只重跑低分。</td></tr>
+          <tr><th scope="row">S03 分析者</th><td>全部原始檔 → 去重、metadata、完整性、計時檢查 → quality ledger、各指標 eligibility。</td><td>順序混淆不可辨識：轉 pilot；技術失效：按預定規則補測／降級。</td></tr>
+          <tr><th scope="row">S04 抽取層</th><td>事件與 ticks → 版本化 canonical derivation → trial、run、matched-pair tables。</td><td>必要錨點缺失只使依賴指標不可算；不填 0，不丟原始列。</td></tr>
+          <tr><th scope="row">S05 教練＋分析者</th><td>run profiles → 看左右、首發、尾端與跨日一致性 → 個人條件比較卡。</td><td>同日三個 run 不足以證明長期最佳；安排跨日確認。</td></tr>
+          <tr><th scope="row">S06 統計者</th><td>資料層級與排程 → 描述、配對或階層模型 → 差值、CI、適配診斷。</td><td>模型不收斂／不可辨識：用預註冊簡化方案或只報估計。</td></tr>
+          <tr><th scope="row">S07 教練＋統計者</th><td>主要效應與門檻 → 執行 §08 決策 → task verdict + 推論範圍。</td><td>未通過不劣閘 ≠ 已證明較差；分開標示「退步」與「未定」。</td></tr>
+          <tr><th scope="row">S08 教練</th><td>暫定候選 → 獨立新 seed／新日期確認，再測遊戲相關任務 → 個人使用建議。</td><td>改善未重現、換姿勢才成立或造成操作代價：暫緩換裝，保留取捨。</td></tr>
+          <tr><th scope="row">S09 分析者</th><td>完整結果 → 固定報告順序、版本與追溯 → HTML + tables + config + audit。</td><td>沒有有效 n、排除原因或不確定性：報告不驗收。</td></tr>
+        </tbody></table></div>
+        <div class="note"><p><strong>既有 S01 的入口：</strong>補歷史 manifest 後直接進 S03，S06 使用描述性分支，S07 為「證據不足以確認最佳」。其用途是驗證抽取與產生下一輪假設。</p></div>
+      </section>
+
+      <section id="protocol">
+        <div class="num">03 / Field protocol</div><h2>讓下一輪測試能回答選用問題</h2>
+        <p>以下時程是<strong>教練提出的可執行起始方案</strong>，不是文獻驗證的最佳訓練劑量。先用獨立 pilot 確认負荷與可行性，再凍結版本；不能邊看正式結果邊調整。</p>
+        <div class="table-wrap"><table class="wide"><thead><tr><th scope="col">階段</th><th scope="col">建議操作</th><th scope="col">必記資料／判準</th></tr></thead><tbody>
+          <tr><th scope="row">測試前</th><td>明定目標為「等量熟悉後的短期表現」。另記既有習慣；若要回答充分適應後的表現，另開較長適應期研究。</td><td>技能層、慣用手、手長／寬、各配置時數、近期睡眠與疲勞、預期偏好。</td></tr>
+          <tr><th scope="row">獨立熟悉日</th><td>每條件 5 分鐘等量練習，包含右鍵控制與滑鼠歸位；順序隨機，練習資料不混入正式測量。</td><td>5 分鐘不是「已熟練」保證；仍出現握法無法維持時，預先安排三條件同等追加練習或延後。</td></tr>
+          <tr><th scope="row">每個測量日</th><td>記錄狀態、固定座位與設備；做相同 5 分鐘一般暖身。正式測量 3 個 block，每 block 含 A/B/C 各 1 個 60 秒 run。</td><td>每天 9 個正式 run，正式任務時間共 9 分鐘；不要以當日最好一場作代表。</td></tr>
+          <tr><th scope="row">每次切換配置</th><td>先休息至少 90 秒，再用獨立練習 seed 適應 60 秒；每 block 後休息 3 分鐘。</td><td>記實際休息、適應時間與不適。休息不能保證清除學習／carryover；模型與敏感度仍檢查。</td></tr>
+          <tr><th scope="row">跨日與確認</th><td>起始安排 2 個測量日、相隔 24–72 小時，盡量同時段。之後預留第 3 日，用未見 seed 確認候選與原配置。</td><td>前兩日每條件 6 runs；这是可行性起點，不能保證 CI 足夠窄。確認日的 block 數與停止規則先鎖定。</td></tr>
+        </tbody></table></div>
+        <h3>六種排列完整覆蓋；seed 在 block 內配對</h3>
+        <div class="table-wrap"><table><caption>單一玩家的排程示意；實際分配用隨機 seed 產生並保存，不照此固定套用全體</caption><thead><tr><th scope="col">日期</th><th scope="col">Block 1</th><th scope="col">Block 2</th><th scope="col">Block 3</th></tr></thead><tbody>
+          <tr><th scope="row">D1</th><td class="numbers">ABC · seed s1</td><td class="numbers">BCA · seed s2</td><td class="numbers">CAB · seed s3</td></tr>
+          <tr><th scope="row">D2</th><td class="numbers">ACB · seed s4</td><td class="numbers">CBA · seed s5</td><td class="numbers">BAC · seed s6</td></tr>
+        </tbody></table></div>
+        <p>每個 block 內的三個 run 使用相同任務 seed，block 間使用不同 seed；練習不使用正式 seed。每位玩家都取得六種排列，但隨機決定分配日、block 次序與 seed 配對；群體再平衡各日各位置的條件分布。同 seed 只保證生成規則，配對仍要核對座標、hitbox、方向與 presentation index。</p>
+        <p>保留 <code>previous_condition</code>、block 次序與實際時間。統計控制不能取代設計；block 可控制已知環境差異，區塊內隨機化降低其餘順序偏差。<a href="https://www.itl.nist.gov/div898/handbook/pri/section3/pri332.htm">方法依據：NIST randomized block designs</a>。</p>
+        <details open><summary>設定控制、盲化與樣本數</summary><div class="detail">
+          <ul>
+            <li>固定 sensitivity、DPI、FOV、aspect、解析度／縮放、weapon、hitbox、timeout、simHz、顯示模式、滑鼠墊、座椅與手臂支撐。記錄韌體、連線模式、設定 polling、腳貼、重量與 grip tape；裝置固有差異是條件的一部分。</li>
+            <li>記錄自報／設定值與實測值的來源。若要比較等實體行程，另測 cm/360；若只維持相同軟體設定，結論寫成「相同設定下」，不能假設兩鼠實體增益完全一致。</li>
+            <li>固定每個 run 前的滑鼠起始位置与可用行程；run 內允許自然歸位並記錄。不要只要求某握法不能抬鼠。</li>
+            <li>同一句指示：「在穩定命中的前提下盡快完成。」不透露各條件即時排名；問卷先填再看結果。玩家無法對握法盲化，分析者可先看 A/B/C 代碼完成 QA。</li>
+            <li>正式玩家數以獨立 pilot 的玩家內差異、日間變異、失敗率與缺失率做模擬，目標是主要 CI 精度／預設功效。每條件 30 次 presentation 只足以啟動描述，不能當樣本數充足證據。</li>
+            <li>確認性計畫鎖定最大收案與複測次數；若採序貫設計，先定停止界線。不能持續加跑直到某條件顯著。</li>
+          </ul>
+        </div></details>
+      </section>
+
+      <section id="data">
+        <div class="num">04 / Minimum data contract</div><h2>補齊「為何這樣打」與「是否能持續使用」的資料</h2>
+        <p>以下為<strong>建議新增的分析資料契約</strong>，不表示目前 export 已含所有欄位。分開 raw、manifest、衍生值與問卷；舊資料缺席就保留 null 與原因，不反推或偽造。</p>
+        <div class="table-wrap"><table class="wide"><thead><tr><th scope="col">層级</th><th scope="col">最低欄位</th><th scope="col">來源與用途</th></tr></thead><tbody>
+          <tr><th scope="row">Player</th><td><code>participant_id, dominant_hand, hand_length_mm, hand_width_mm, game_role, skill_band, habitual_mouse, habitual_grip, familiarity_hours</code></td><td>問卷／量測；描述適用玩家與熟悉度，不用小樣本事後挖「某手型必勝」。</td></tr>
+          <tr><th scope="row">Session</th><td><code>session_id, date, sleep_hours, fatigue_pre, practice_today_min, task_goal, protocol_version</code></td><td>測試前紀錄；追查日間差異。涉及玩家識別的照片另存、取得同意，報告僅用匿名 ID。</td></tr>
+          <tr><th scope="row">Run manifest</th><td><code>run_id, condition_id, mouse_id, grip_id, block_id, order_position, previous_condition, seed, practice_or_test, started_at, rest_sec, deviation</code></td><td>測試員與匯出對帳；以 manifest 為條件權威，不由資料夾猜握法。</td></tr>
+          <tr><th scope="row">Hardware／task</th><td><code>build_id, schema_version, drill_id, config_hash, dpi, sensitivity, cm_per_360, fov, aspect, display_hz, sim_hz, timeout_ms, weapon_id</code></td><td>值＋來源＋缺失原因。設定 polling 只能作設定紀錄，不能代替實測事件頻率。</td></tr>
+          <tr><th scope="row">Timing／quality</th><td><code>active_start, active_end, boundary_source, raw_duration, active_duration, trim_reason, validity_flags, missing_reason, detector_health</code></td><td>有效區間與指標 eligibility；可追溯每次修剪，不用零位移當任務結束。</td></tr>
+          <tr><th scope="row">Presentation</th><td><code>presentation_id, presentation_index, target_id, stimulus_key, side, D_deg, W_deg, pitch, t_visible, t_onset, t_entry, t_first_fire, first_fire_hit, t_hit, observed_until, event_observed, end_reason</code></td><td>一列一次 peripheral 呈現；保留原始時間單位與轉換規則。首發對應目前 target 的第一個 compatible fire。</td></tr>
+          <tr><th scope="row">Analysis eligibility</th><td><code>eligible_rate, eligible_accuracy, eligible_time, eligible_mechanism, in_matched_prefix, exclusion_reasons, flags</code></td><td>不同指標可能有不同有效 n；不以單一 excluded 欄位掩蓋部分可用資料。</td></tr>
+          <tr><th scope="row">Run 後主觀回饋</th><td><code>comfort_0_10, perceived_control_0_10, effort_0_10, discomfort_0_10, discomfort_location, unintended_click_confirmed</code></td><td>舒適／控制 0=最低、10=最高；負荷／不適 0=無、10=最高。分開報，不混成效能總分。</td></tr>
+          <tr><th scope="row">Audit</th><td><code>raw_sha256, relative_path, manifest_version, extractor_version, analysis_config_hash, analysis_seed, qa_review</code></td><td>同份資料的副本只計一次；hash 只解決完全相同檔案，另用 session/run 身分檢查重複匯出。</td></tr>
+        </tbody></table></div>
+        <div class="note"><strong>額外資料的優先序</strong><p>先補 condition／order／時間邊界／熟悉度，才有公平比較；再补跨日與舒適負荷，才有個人選用；影片與 raw mouse samples 用來回答特定機制問題，不作每次測試必備負擔。</p></div>
+      </section>
+
+      <section id="quality">
+        <div class="num">05 / Quality before outcomes</div><h2>修剪任務外時間，保留真實表現代價</h2>
+        <div class="table-wrap"><table class="wide"><thead><tr><th scope="col">檢查</th><th scope="col">最終處置</th><th scope="col">稽核／停止條件</th></tr></thead><tbody>
+          <tr><th scope="row">重複、drill、參數</th><td>先去重；只納入指定 Wide 版本。非計畫中的 protocol 差異不可直接合併；planned seed bank 差異可接受。</td><td><code>DUPLICATE_EXPORT / WRONG_DRILL / PROTOCOL_MISMATCH</code>；全部輸入檔仍列 ledger。</td></tr>
+          <tr><th scope="row">Run 硬閘</th><td>validity 五旗、suspect、overflow 或 pointer-lock 失效觸發時，主比較先停用該 run；保留失效原因與補測身分。</td><td><code>INVALID_RUN</code>。lateEventCount 非零必列示並按預定完整性規則處理，不自動當零影響。</td></tr>
+          <tr><th scope="row">偵測失效</th><td>检查 aim 更新、onset／entry 可用率與事件排序。僅偵測器失效而 visible/fire 完整時，可保留產出與首發結果，停用依賴機制。</td><td><code>DETECTOR_UNHEALTHY</code>；不把「玩家沒動」與「演算法沒偵測到」混成一種。</td></tr>
+          <tr><th scope="row">Baseline 不足</th><td>reaction 與所有依賴 onset 的指標一併標不可用／低可信，包含 onset → entry 的 movement time；逐指標傳播品質。</td><td><code>BASELINE_SHORT</code>；不只停用 reaction 卻保留同一 onset 算出的機制結論。</td></tr>
+          <tr><th scope="row">任務內失敗</th><td>timeout、未開火、補槍、長尾、自然歸位與右鍵重疊，均留在主結果。</td><td>只對技術缺失做排除；有效但差的表現不能清掉。</td></tr>
+          <tr><th scope="row">疑似 repositioning</th><td>保留主分析，報標記率與排除敏感度；150 ms／2 deg/s 是原工具候選規則，跨鼠未重校準。</td><td><code>REPOSITION_SUSPECTED</code>；不能命名為真實抬鼠次數。</td></tr>
+          <tr><th scope="row">配對缺席</th><td>刺激不一致或某一側不可用，只使該 pair／該指標退出配對；原列與其他可用指標仍保留。</td><td><code>UNMATCHED_STIMULUS / PAIR_MEMBER_MISSING</code>；逐對比報配對分母。</td></tr>
+          <tr><th scope="row">差別缺失</th><td>保留原文件「eligible &lt;70% 或條件差 &gt;10 pp」作暫定技術 QA 警戒，正式前校準；只計技術不可用，不計 timeout 等行為失敗。</td><td>觸發時暫停依賴該指標的確認性排名，先查原因與界限敏感度；此數字不是通用科學標準。</td></tr>
+        </tbody></table></div>
+        <h3>Active duration 的唯一計算契約</h3>
+        <div class="formula">active_duration = active_end − active_start<br>peripheral_hits_per_min = unique_peripheral_hits / (active_duration_ms / 60000)</div>
+        <ol>
+          <li><strong>優先使用可靠的任務開始／結束錨點</strong>，並確認與匯出版本的計時語意一致。</li>
+          <li>若無結束事件，使用可追溯到該版本的 task duration／protocol，與 start 錨點交叉驗證。把來源、預期 60 秒及實際記錄跨度一起寫入 ledger。</li>
+          <li>S01 可在上述證據成立後，從首個任務 visible 起保留 60 秒；前 3 秒倒數與已確認的錄製尾巴分別記 <code>TRIM_COUNTDOWN</code>、<code>TRIM_POST_TASK</code>。</li>
+          <li><strong>不得用最後一槍、最後一個 visible 或最後一個非零 tick 當 active_end。</strong>任務末段等待、未命中、回中心仍屬任務成本；拿掉會偏袒失敗較多的條件。</li>
+          <li>邊界无法確定，速率為 null／boundary unknown，停止效率排名。時間窗若真中途失去資料，不能假装只是可剪除的休息。</li>
+        </ol>
+        <p>Rate 的分母含回中心與任務內等待，因此它是<strong>完整 center–peripheral 任務的產出率</strong>，不是純外甩動作速度。每個周邊 presentation 最多計一次有效命中，避免重複 hit event 灌水。</p>
+        <p class="mini muted">報告必列：匯入 → 去重 → 通過 run 閘 → 有效 active 秒數 → 全部呈現 → 各指標 eligible → 配對數。分別呈現 players／days／blocks／runs／trials，不只給一個 n。</p>
+      </section>
+
+      <section id="metrics">
+        <div class="num">06 / Outcomes and mechanisms</div><h2>先看結果，再用動作機制解釋</h2>
+        <div class="table-wrap"><table class="wide"><thead><tr><th scope="col">用途／指標</th><th scope="col">操作定義與分母</th><th scope="col">方向與限制</th></tr></thead><tbody>
+          <tr><th scope="row">主要產出<br>hits/min</th><td>完整有效 run 的唯一周邊命中數 ÷ active minutes；對照首發率一起報。</td><td>↑ 較好；不能只取共同前綴，也不能排除任務內停頓。</td></tr>
+          <tr><th scope="row">準度閘<br>首發命中率</th><td>對每次呈現找第一個 target-compatible fire，讀該事件的 <code>hit</code>；首發命中呈現數 ÷ 全部可觀測周邊呈現數。</td><td>↑ 較好；完整觀測但未開火／timeout 記 0。<code>PeekWindow.outcome</code> 的 eventual hit 不能代替首發。</td></tr>
+          <tr><th scope="row">失敗閘<br>timeout risk</th><td>在任務允許的 target deadline 前未命中；用完整 follow-up 的試次估，另處理 session-end 提早右截。</td><td>↓ 較好；不得把提早結束的最後一個 target 誤標 timeout。</td></tr>
+          <tr><th scope="row">時間與尾端<br>median／p90 time-to-hit</th><td><code>t_hit − t_visible</code>；未命中保留觀測截止時間及 event=0。主分布用能處理右截的方法。</td><td>↓ 較好；若命中累積概率未到 90%，p90 標為「觀測範圍內不可估」，不能從成功子集硬算。</td></tr>
+          <tr><th scope="row">共同時限代價<br>RMST(τ)</th><td><code>∫₀^τ S(t)dt</code>，τ 預先固定為三條件都有支持的共同觀測時限。p90 常不可估時，pilot 後預先選它作尾端決策指標。</td><td>↓ 較好；是截至 τ 的受限時間代價，不是未命中試次的實際命中時間。</td></tr>
+          <tr><th scope="row">可靠性<br>run／day variability</th><td>每條件的 run 分布、日間差、paired block 差；主量綱配 MAD／IQR，標記有效重複數。</td><td>較小通常較穩；低且差的表現也可很穩。少數 run 的波動不當 MDC，不自動當決勝分。</td></tr>
+          <tr><th scope="row">使用可接受性<br>舒適、負荷、右鍵</th><td>固定量表前後變化＋觸發計數／active minute＋玩家確認。</td><td>與效能分開；右鍵重疊分層是關聯描述，不是「誤觸造成多少退步」的因果分解。</td></tr>
+        </tbody></table></div>
+        <div class="note warn"><strong>三種「沒有命中」不能混用</strong><p><b>Target timeout：</b>完整追蹤到 deadline，已知未在限時內命中。<b>Session end：</b>觀測提早結束，是行政右截。<b>資料遺失：</b>結果未知，記 null 與技術缺失；不能當失敗或成功。</p><p>沿用「有限 run 內實際首發成功」口徑時，session-end 前完全沒開火計 0，但另標 administrative-end；再作「只保留呈現時剩餘時間足夠完整 deadline」的敏感度分析，避免邊界機會不等。若此處置改變候選結論，標記未定。</p></div>
+        <p>右截資料只支持觀測範圍內的命中分布；估計需要檢查 censoring 機制與各條件可追蹤時間。不得外推 timeout 之後的命中時間來製造 p90。<a href="https://www.itl.nist.gov/div898/handbook/apr/section1/apr131.htm">NIST censoring</a>、<a href="https://itl.nist.gov/div898/handbook/apr/section2/apr215.htm">Kaplan–Meier 方法</a>提供此處的基本方法依據；本任務的事件定義如上。</p>
+        <details open><summary>教練機制層：每個數字必須連到行為假設</summary><div class="detail">
+          <div class="table-wrap"><table><thead><tr><th scope="col">指標</th><th scope="col">定義／品質依賴</th><th scope="col">可以協助追查</th></tr></thead><tbody>
+            <tr><th scope="row">Reaction</th><td><code>onset − visible</code>；須 baseline 與 detector 健康。</td><td>啟動延遲；不能在 KI-034 風險未排除時比較反應力。</td></tr>
+            <tr><th scope="row">Movement time</th><td><code>first_entry − onset</code>；同樣依賴 onset。未進靶則 null。</td><td>搬運與煞停時間；不是純肌肉反應速度。</td></tr>
+            <tr><th scope="row">Peak／entry ω</th><td>沿用 canonical tick-integral 角速度與 ray/sphere entry；明定取樣窗。</td><td>速度與制動；先看 D、side、hitbox，不能把高峰速直接當好。</td></tr>
+            <tr><th scope="row">Brake retention</th><td><code>|ω_entry| / peak |ω|</code>；peak 窗涵蓋 entry，分母 0／entry 缺席則 null。</td><td>進靶前是否卸速；較低也可能是過早煞車，必須與命中時間並讀。</td></tr>
+            <tr><th scope="row">Trigger margin</th><td><code>first_fire − first_entry</code>；保留正負，任一錨點缺失則 null。</td><td>搶拍與確認延遲；負值不是獨立失敗證據，需看首發 hit 與事件精度。</td></tr>
+            <tr><th scope="row">Overshoot／drop</th><td>沿用首次進靶後逸出角、掉靶、重新進靶的 canonical 語意。</td><td>煞不停或反覆修正；不能另發明一套幾何門檻。</td></tr>
+            <tr><th scope="row">補槍成本</th><td><code>first_corrective_hit − first_miss</code>；限首發 miss 子集，未補中保留右截。</td><td>失誤後恢復；子集比例也要報，不能只比較成功補中的快慢。</td></tr>
+          </tbody></table></div>
+          <p>沿用既有六類 outcome atlas 作<strong>可重疊標記</strong>：首發命中／補槍／未開火／穿越邊緣／搶拍空放／timeout。總和可能超過 100%；若畫互斥堆疊，必須另定義並公布分類優先序。</p>
+          <p>機制欄位是分析契約；尚未驗證的欄位標記 proposed／unavailable，不宣稱本次已實作 pipeline。</p>
+        </div></details>
+      </section>
+
+      <section id="analysis">
+        <div class="num">07 / Analysis tracks</div><h2>分析層級要跟測試設計一致</h2>
+        <div class="grid two">
+          <article class="card"><div class="label">Track P · Historical pilot</div><h3>S01：描述與方法診斷</h3>
+            <ul><li>完整 run 的 rate；共同 43 次前綴的刺激配對診斷。鍵為 <code>rep + presentation_index + stimulus_key</code>，每條件最多 129 列、每組對比最多 129 pairs。</li><li>逐 run 列原尺度差與範圍；可以給配對中位差。若保留 Hodges–Lehmann，明確寫 paired estimator 與其對稱性／位移假設，不混叫平均差。</li><li>原文按 presentation index 重抽的 CI，最多反映固定 run／序列下的條件式不確定性；無法涵蓋 run 漂移、序列相依或跨日變異。</li><li>只有 3 個 run／條件時，不以「bootstrap 無假設」背書精度。報 run 差異與敏感度；CI 若呈現必標 exploratory。</li></ul>
+          </article>
+          <article class="card"><div class="label">Track I · Individual choice</div><h3>新資料：玩家內選用</h3>
+            <ul><li>以完整 matched block 比較 A/B/C，保留日與 block 邊界；可用受排程限制的 randomization inference 或 block 層級模型。</li><li>重抽必須整包保留同 block 三條件與其 trials；跨日變異要靠實際多日量測，不能重抽 trial 假造。</li><li>2 日、6 blocks 只是起始設計；若 CI 不足，結論為未定，依預定補測計畫增加日期。</li><li>前兩日選候選，第 3 日新 seed 確認；預先設定改善／不劣標準，避免只重播選中的好成績。</li></ul>
+          </article>
+        </div>
+        <div class="note warn"><strong>S01 漂移只做壓力測試</strong><p>可列各條件 run 斜率，以及「假設該斜率延續至空窗」的差值範圍。斜率方向相反或估計不穩時標「不可估」。即使觀察差大於這個範圍，也不能把固定順序變成隨機實驗；不做以漂移校正後的因果排名。</p></div>
+        <h3>Track C：多玩家、重複量測的群體分析</h3>
+        <p>群體目標定義為「每位玩家等權的平均條件差」。先在玩家內匯總，再對玩家平均／標準化；不能让打出較多 targets 的玩家占較大權重。玩家內 trial 數本身可能受表現影響，須檢查加權方式的敏感度。</p>
+        <div class="table-wrap"><table class="wide"><thead><tr><th scope="col">Outcome</th><th scope="col">候選模型／主輸出</th><th scope="col">層級與診斷</th></tr></thead><tbody>
+          <tr><th scope="row">首發成功</th><td>Trial-level logistic mixed model；輸出等權玩家標準化的成功率、差值 pp 與 CI；OR 為補充。</td><td>condition、position、block_index、session_day；player 截距＋condition slope，player:day、matched block 與 run 的群聚。</td></tr>
+          <tr><th scope="row">周邊命中數</th><td>Run-level count model，<code>offset(log(active_minutes))</code>；視 dispersion 選 Poisson／negative binomial；輸出 hits/min 差與 rate ratio。</td><td>player、day、matched block；檢查過度／不足離散。每 run 只有一列，不再機械加入不可辨識的 run 隨機截距。</td></tr>
+          <tr><th scope="row">Time-to-hit</th><td>限制於共同 follow-up 的 survival／AFT 或 marginal survival summaries；報 median、p90、RMST(τ)。</td><td>保留 deadline／session-end 原因；檢查模型分布與截尾假設；AFT 不可靠時不得外推不可觀測分位數。</td></tr>
+          <tr><th scope="row">穩定性與尾端 CI</th><td>Player-cluster bootstrap：整位玩家全部條件、所有日期一起抽；必要時按完整 matched block 做額外敏感度。</td><td>不要把三條件獨立重抽。每次重抽重新計算決策；「未定」保留在比例分母，不稱 Bayesian 勝率。</td></tr>
+        </tbody></table></div>
+        <p>有足夠刺激範圍且設計允许時，再納入 side、D、pitch、seed／stimulus；S01 狹窄 D 不作劑量推論。以 <code>previous_condition</code> 與 condition × day 檢查殘留及適應；不為消除真實條件效果而在主模型調整右鍵觸發、主觀負荷等測試後變項。</p>
+        <p>隨機效果過多而 singular／不收斂時，依预先約定改為不相關 condition slopes、較簡結構或玩家層配對摘要；報簡化理由與敏感度。<strong>大量 trial 不等於大量玩家</strong>，重複觀測的相依性必须保留。<a href="https://pubmed.ncbi.nlm.nih.gov/20074371/">方法依據：Lazic（2010），pseudoreplication</a>。</p>
+        <details open><summary>配對、整體效能與重測誤差的補充規則</summary><div class="detail">
+          <ul><li>同 seed 的 presentation index 是刺激匹配，不代表同一時間或同一疲勞程度。匹配前先比較 target 座標／hitbox；sequence 多出的尾端仍保留在完整 run 效能。</li><li>新研究不能照抄 43；每個 block 記可用共同前綴。前綴分析是「大家都遇到的刺激」子問題，主要完整任務估計不能只留最快／最乾淨的部分。</li><li>對首發、timeout 的二元資料報明確分母與配對缺失；對 censored time 不可把上限數值當普通觀測拿去做 paired t-test／HL。</li><li>有足夠重測後可估 within-player measurement error；若合適才使用 <code>MDC95 = 1.96 × √2 × SEM</code>，並說明 SEM 的估法與獨立誤差假設。跨條件 effect SESOI 仍由實際選用意義決定。</li><li>群體平均優勝與玩家異質性可以同時成立；分開報平均效應、player slopes、實質退步者與未定比例，不因平均好就要求每位玩家換裝。</li></ul>
+        </div></details>
+      </section>
+
+      <section id="decision">
+        <div class="num">08 / Decision rules</div><h2>最佳組合需要超過「看起來比較快」</h2>
+        <p>先選定一組主要決策指標：<b>首發成功率、timeout risk、hits/min、尾端時間 T</b>。T 在獨立 pilot 後、正式研究前固定為 p90 或 RMST(τ) 其中一個；不能看哪項顯著才切換。Median 與 run 波動作必要背景。</p>
+        <div class="table-wrap"><table><thead><tr><th scope="col">凍結參數</th><th scope="col">原尺度</th><th scope="col">如何決定</th></tr></thead><tbody>
+          <tr><th scope="row">δA、δF</th><td>首發退步容許 pp、timeout 增加容許 pp</td><td>由任務代價與教練容忍度提出，再用 pilot 檢查可測性；不是直接拿 1 SD 當門檻。</td></tr>
+          <tr><th scope="row">δR</th><td>值得換裝的 hits/min 差</td><td>以實際多完成幾次與改習慣成本討論；在正式資料揭盲前鎖定。</td></tr>
+          <tr><th scope="row">δT、τ</th><td>尾端時間 ms、共同追蹤上限 ms</td><td>來自任務 deadline、使用需求與可觀測區間，不從觀察到的勝者倒推。</td></tr>
+          <tr><th scope="row">分析與樣本計畫</th><td>CI family、N、日期、blocks、最大補測</td><td>用獨立 pilot 做精度／功效評估；未凍結的研究只報估計。</td></tr>
+        </tbody></table></div>
+        <h3>統一差值方向，避免臨場改規則</h3>
+        <div class="formula">候選 c 相對對手 j：<br>B_A = accuracy(c) − accuracy(j)<br>B_F = timeout(j) − timeout(c)<br>B_R = rate(c) − rate(j)<br>B_T = tail_time(j) − tail_time(c)<br>以上 B &gt; 0 均代表候選較好。</div>
+        <p>對每一組差值使用與決策一致的區間 [L, U]。三條件共有 3 組 pairwise contrasts × 4 指標 = 12 個區間。可執行的保守預設是 <strong>Bonferroni simultaneous family 95%</strong>：每個雙側區間採 <code>1 − 0.05/12 = 99.5833%</code>；另列一般 95% CI 供閱讀但不拿它作正式決策。若事先選 Holm 檢定／max-t simultaneous CI，整個 family 與對應界線都須一致，不能只改 p 值、不改判準。</p>
+        <ol>
+          <li><strong>資格閘：</strong>品質、protocol、有效重複與可辨識性通過；S01 不具確認性資格。</li>
+          <li><strong>準度與失敗不劣：</strong>候選相對每個其他條件都須有 <code>L_A &gt; −δA</code>、<code>L_F &gt; −δF</code>。</li>
+          <li><strong>效率優勢：</strong>相對每個對手有 <code>L_R &gt; δR</code>，且 <code>L_T &gt; −δT</code>，才能以有效產出宣告明確最佳。</li>
+          <li><strong>效率等效時的尾端決勝：</strong>對所有未被效率優勢擊敗的對手，rate 區間整段在 <code>[−δR, +δR]</code> 內，且 <code>L_T &gt; δT</code>；準度／失敗不劣仍須通過。不能只因 rate「不顯著」就使用此分支。</li>
+          <li><strong>沒有完整勝者：</strong>依證據輸出取捨、等效或未定。舒適度可支持個人選用，但不能把「較舒適」改寫成「表現顯著更好」。</li>
+        </ol>
+        <div class="grid two">
+          <article class="card verdict good"><h3>明確最佳</h3><p>一個候選以同一套事前規則勝過其餘兩個；註明是「群體平均」或「個人」以及測試範圍。個人長期選用仍需確認日與情境驗證。</p></article>
+          <article class="card verdict trade"><h3>有證據的取捨</h3><p>例如 rate 有實質優勢，同時首發有實質劣勢；需區間支持兩端。列各自優勢與適用情境。若只是不劣尚未證成，應標未定而非已證實取捨。</p></article>
+          <article class="card verdict"><h3>實質等效</h3><p>欲稱三條件等效，全部三組對比、全部四項主要差值區間都落入各自 ±δ。只對 A/B 成立則僅稱 A/B 等效；可依舒適、熟悉與改用成本選擇。</p></article>
+          <article class="card verdict"><h3>證據不足／部分排序</h3><p>區間跨實質改善與退步、p90 不可估、品質不足或固定順序混淆。可報某 pair 已有結論，整體冠軍未定；不得把 bootstrap 最常第一強稱最佳。</p></article>
+        </div>
+        <p>「p &gt; .05」不能證明等效；實質界線需要事前定義。本頁採用 simultaneous 95% 區間完整落入界線的保守政策，與通常以 90% CI 表達的單一 α=.05 TOST 並非相同門檻。<a href="https://doi.org/10.1177/1948550617697177">方法依據：Lakens（2017），Equivalence Tests</a>。</p>
+        <details open><summary>教學示例：為什麼不劣未通過不等於變差？</summary><div class="detail">
+          <p><strong>下列為虛構數字，非本批結果，也不是建議預设門檻。</strong>假設 δA=2 pp、δR=2 hits/min。候選首發差值區間為 [−3, +1] pp，rate 差值區間為 [+3, +6] hits/min。</p>
+          <p>Rate 有實質優勢，但首發下界 −3 未高於 −2，故準度不劣尚未通過；首發上界 +1 又不低於 −2，亦未證成實質退步。正確結論是「效率優勢已見，準度代價未定，補測」，不是「全面最佳」或「已證實拿準度換速度」。</p>
+        </div></details>
+      </section>
+
+      <section id="coaching">
+        <div class="num">09 / Coaching loop</div><h2>把差異變成可驗證的訓練與選用建議</h2>
+        <p>以下是教練的<strong>待驗證假設</strong>，不是由指標直接診斷動作原因。先看匿名條件的結果，再對照 trial 時序／必要影片；一次只改一項，避免把換握法、改感度與姿勢調整混在一起。</p>
+        <div class="table-wrap"><table class="wide"><thead><tr><th scope="col">觀察到的 profile</th><th scope="col">優先追查</th><th scope="col">下一次練習／複測</th><th scope="col">判讀要點</th></tr></thead><tbody>
+          <tr><th scope="row">產出快、首發掉</th><td>Trigger margin、首發角誤差、穿越後補槍。</td><td>固定其他設定，練習先可靠進靶再擊發；回到原任務規則重測。</td><td>看首發能否恢復且 rate 優勢仍在；不能只挑補中後的結果。</td></tr>
+          <tr><th scope="row">首發穩、產出慢</th><td>Movement time、進靶後等待、回中心成本。</td><td>用時序區分搬運慢或過久確認；针对已確認的瓶頸練習。</td><td>Reaction 不可用時，不把整體慢歸因於反應力。</td></tr>
+          <tr><th scope="row">高峰速、常過衝</th><td>Entry ω、overshoot、手臂支撐、握壓。</td><td>練習較早減速，維持相同感度；再測時間與首發。</td><td>低 brake retention 本身不算成功，仍要看完成品質。</td></tr>
+          <tr><th scope="row">左右差／後段變差</th><td>起始位置、可用墊面、歸位、疲勞。</td><td>同規則重設每 run 起點，保留 run 內自然歸位；按左右與前後段複測。</td><td>不為了變漂亮只排除疑似抬鼠試次。</td></tr>
+          <tr><th scope="row">右鍵多、逐 run 減少</th><td>手指分工、玩家是否刻意、熟悉程度。</td><td>在獨立適應期檢查右鍵控制；新日期重新比較。</td><td>不能單凭 34→28→17 認定已學會，或認定此握法有缺陷。</td></tr>
+          <tr><th scope="row">短測強、負荷高</th><td>舒適、不適位置、手部張力、長時段變化。</td><td>在玩家可接受範圍做固定時長的後續任務；有不適即停並記錄。</td><td>表現勝出與可持續使用分開；不要求忍受不適換分數。</td></tr>
+        </tbody></table></div>
+        <h3>複測要驗證兩件不同的事</h3>
+        <div class="grid two">
+          <article class="card"><div class="label">Confirmation</div><h3>新日期、新 seed 還成立嗎？</h3><p>以固定 block 數比較暫定候選與原配置，AB／BA 次序平衡；若仍有兩個未決候選則保留三條件。維持相同準度／失敗閘與實質改善判準，單獨報確認資料，再另報合併估計。</p><p>若不重現：記為「尚未確認」，檢查適應、日狀態與區間寬度。不要只追加候選的好場次。</p></article>
+          <article class="card"><div class="label">Transfer</div><h3>在玩家要玩的情境有用嗎？</h3><p>先指定目標遊戲與角色，再選 micro-flick、tracking 或遊戲內可重複情境；ADS 有效的遊戲須另外檢查右鍵操作代價。每個任務各報 profile，不平均成總分。</p><p>實戰 K/D 或勝率受地圖、對手、隊友與角色影響，只作補充。Wide 優勢先稱為「Wide 任務優勢」，通過目標情境測試才擴大使用建議。</p></article>
+        </div>
+        <div class="note ok"><strong>個人選用卡的固定句型</strong><p>「在［日期／配置／任務］下，［候選］相對［原配置］的首發差為［pp＋CI］、產出差為［hits/min＋CI］、尾端差為［ms＋CI］；［已／未］跨日確認，主觀代價為［紀錄］。因此［改用／維持／情境限定／補測］，下一次在［條件與日期］複測。」</p></div>
+      </section>
+
+      <section id="delivery">
+        <div class="num">10 / Delivery and acceptance</div><h2>報告先交代能信多少，再交代誰比較好</h2>
+        <ol>
+          <li><strong>資料資格：</strong>protocol 版本、來源、排除流程、邊界來源、有效 players／days／blocks／runs／trials。</li>
+          <li><strong>時序與混淆：</strong>實際排程、缺失、練習／疲勞；S01 的固定順序警示緊貼差值。</li>
+          <li><strong>三條件原尺度 profile：</strong>first-shot rate、hits/min、timeout、時間分布、舒適負荷。</li>
+          <li><strong>決策：</strong>事前 margins、simultaneous CI、每對手的 guardrail 表、四種結論之一。</li>
+          <li><strong>個人差異：</strong>player paired-delta 圖、跨日變化、未定與受損比例；平均排名不代替個人建議。</li>
+          <li><strong>機制與敏感度：</strong>B−A 與 C−B 並列，trial microscope、左右、seed、順序、行政右截、疑似歸位、缺失界限。</li>
+          <li><strong>教練行動：</strong>是否換裝、代價、確認日／轉移測試狀態、下一次複測與結論適用範圍。</li>
+        </ol>
+        <div class="table-wrap"><table><caption>未來 pipeline 的交付契約；本次實際交付為此 HTML workflow</caption><thead><tr><th scope="col">Artifact</th><th scope="col">最低內容</th></tr></thead><tbody>
+          <tr><th scope="row"><code>protocol.json</code></th><td>條件、任務版本、排程生成規則、門檻、N／停止規則、模型與敏感度。</td></tr>
+          <tr><th scope="row"><code>cohort_manifest.csv</code></th><td>player × day × block × condition × run；原始路徑、實際順序與偏離。</td></tr>
+          <tr><th scope="row"><code>quality_ledger.csv</code></th><td>包含被排除／無法解析的 run、去重、時間修剪、每指標有效狀態。</td></tr>
+          <tr><th scope="row"><code>trial_metrics.csv</code></th><td>含無效／缺失的全部呈現、事件錨點、censoring、quality flags；可另供 Parquet。</td></tr>
+          <tr><th scope="row"><code>run_metrics.csv</code>／<code>paired_metrics.csv</code></th><td>完整 run 產出與配對刺激母體分開；補槍、timeout 不能在 pivot 時消失。</td></tr>
+          <tr><th scope="row"><code>model_estimates.csv</code></th><td>原尺度／模型尺度、一般 CI／決策 CI、family、有效 n、模型診斷。</td></tr>
+          <tr><th scope="row"><code>decision.json</code></th><td>scope、margins、每對手 pass／harm／uncertain、群體 verdict、個人 confirmed 狀態。</td></tr>
+          <tr><th scope="row"><code>cohort_report.html</code>／<code>audit.json</code></th><td>離線報告、版本與 hashes、執行環境、分析 seed、重現指令及限制。</td></tr>
+        </tbody></table></div>
+        <details open><summary>交付驗收清單</summary><div class="detail">
+          <ul>
+            <li>首發 hit 與 eventual hit 用「先 miss 後 hit」案例驗證，兩者不能相同。</li>
+            <li>「倒數、錄製尾巴、任務末段無操作」三種案例分開；只修剪前兩者，rate 分母可追溯。</li>
+            <li>timeout／no-fire／session-end／缺資料分開；p90 不可估時顯示原因，無虛構時間。</li>
+            <li>共同前綴只限制配對表，完整 rate 不被裁成同樣命中機會。</li>
+            <li>Baseline/onset 品質傳播到所有依賴指標；右鍵與疑似歸位不被靜默剔除。</li>
+            <li>統計保留 player/day/block/run 相依性，群體推論與個人確認分開。</li>
+            <li>三組對比、四項主要指標、多重比較 family、SESOI 與 decision verdict 相互一致。</li>
+            <li>每個結論可以追回 raw → presentation → run → model contrast；失敗、缺失與未定都可見。</li>
+          </ul>
+          <p class="mini muted">未來抽取實作應重用既有 canonical windows／geometry／kinematics，讓 I/O、純抽取與統計各自可驗證。落在 scripts/ 的程式需確認其專屬 typecheck 覆蓋；不沿用原文件對舊版 npm scripts 的固定假設。</p>
+        </div></details>
+      </section>
+
+      <section id="sources">
+        <div class="num">11 / Provenance</div><h2>來源、新增內容與誠實邊界</h2>
+        <div class="table-wrap"><table><thead><tr><th scope="col">來源</th><th scope="col">本版承接的內容</th></tr></thead><tbody>
+          <tr><th scope="row"><a href="mouse-grip-comparison-workflow-2026-09-17.html">原版：雙滑鼠 × 握法比較 workflow</a></th><td>S01 資料盤點、配對前綴、時序混淆、品質留痕、右鍵與 KI 風險。</td></tr>
+          <tr><th scope="row"><a href="mouse-grip-best-combination-analysis-workflow-2026-09-17.html">原版：最佳組合分析 workflow</a></th><td>三條件決策、多玩家重複量測、guardrails、四種結論與可重現輸出。</td></tr>
+          <tr><th scope="row"><a href="../spider-shot-wide-v1-performance-metrics-proposal-2026-09-09.html">Wide 表現指標提案</a></th><td>產出、首發、時間、品質與真人驗證的分層。</td></tr>
+          <tr><th scope="row"><a href="../spider-shot-wide-v1-angular-speed-coaching-2026-09-10.html">Angular speed 教練視覺化</a></th><td>煞停、擊發、補槍與可重疊 outcome atlas。</td></tr>
+          <tr><th scope="row"><a href="../../../operational/analysis-spider-shot.md">Spider Shot 離線分析契約</a>／<a href="../../../known_issue/">Known issues</a></th><td>沿用 canonical 構念；KI-031／KI-034 是資料判讀風險，個別資料是否通過須實測。</td></tr>
+        </tbody></table></div>
+        <p><strong>本版新增的教練與分析建議：</strong>熟悉度／手型／負荷資料、可執行交叉排程、行政右截與指標別 eligibility、保留疑似歸位、同步區間決策、跨日獨立確認與遊戲轉移。這些是本流程的設計選擇；所列時長與 QA 數字不是已校準常模。</p>
+        <p><strong>方法文獻：</strong><a href="https://www.itl.nist.gov/div898/handbook/pri/section3/pri332.htm">NIST：randomized block designs</a>；<a href="https://pubmed.ncbi.nlm.nih.gov/20074371/">Lazic（2010）：pseudoreplication</a>；<a href="https://www.itl.nist.gov/div898/handbook/apr/section1/apr131.htm">NIST：censoring</a>與<a href="https://itl.nist.gov/div898/handbook/apr/section2/apr215.htm">Kaplan–Meier</a>；<a href="https://doi.org/10.1177/1948550617697177">Lakens（2017）：equivalence testing</a>。文獻支持一般方法，未直接驗證本遊戲、握法或本文訓練劑量。</p>
+        <div class="note warn"><strong>目前可以交付流程，不能交付虛構的勝者</strong><p>本頁整合兩份設計文件，並核對部分原始資料結構；沒有執行完整 cohort pipeline，沒有表現常模、技能等級或產品優劣結論。SESOI、正式样本數與個人適應是否足夠，須依上述程序決定。既有 S01 永遠保留其固定順序 pilot 身分。</p></div>
+      </section>
+    </div>
+    <footer>Spider Shot Wide · 滑鼠 × 握法最終整合 Workflow · v2.0 · 2026-09-17<br>保留兩份原始 workflow 作來源；本文件的整合規則優先用於後續新分析計畫。可直接離線閱讀；章節可跳轉、補充內容可展開。</footer>
+  </main>
+</div>
+</body>
+</html>
